@@ -36,15 +36,12 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 3. **UI Displays Correctly:** Application loads in browser with modern SaaS aesthetic (clean layout, proper typography, responsive)
 4. **Local Setup Works:** User can follow simple instructions to set up local environment and open app in browser
 
-**Plans:**
-- [ ] 01-01-PLAN.md — Project setup (Vite + Express + Tailwind)
-- [ ] 01-02-PLAN.md — Chat panel and layout
-- [ ] 01-03-PLAN.md — D2 rendering pipeline
+**Status:** ✓ Complete (2026-02-14)
 
 **Plans:**
-- [ ] 01-01-PLAN.md — Project setup (Vite + Express + Tailwind)
-- [ ] 01-02-PLAN.md — Chat panel and layout
-- [ ] 01-03-PLAN.md — D2 rendering pipeline
+- [x] 01-01-PLAN.md — Project setup (Vite + Express + Tailwind)
+- [x] 01-02-PLAN.md — Chat panel and layout
+- [x] 01-03-PLAN.md — D2 rendering pipeline
 
 ---
 
@@ -127,7 +124,7 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
-| 1 | Foundation & Rendering Pipeline | 4 | Planned (3 plans) |
+| 1 | Foundation & Rendering Pipeline | 4 | ✓ Complete |
 | 2 | Core Chat-to-Diagram Loop | 10 | Pending |
 | 3 | Editing & Polish | 8 | Pending |
 | 4 | Persistence & Semantic Memory | 4 | Pending |
