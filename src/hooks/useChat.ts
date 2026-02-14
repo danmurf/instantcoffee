@@ -14,6 +14,7 @@ const STREAM_DEBOUNCE_MS = 500;
 
 /**
  * System prompt for the D2 diagram generation assistant
+ * Supports both initial diagram creation and iterative refinement
  */
 const SYSTEM_PROMPT = `You are a D2 diagram generation assistant. Your role is to help users create diagrams by generating D2 code based on their descriptions.
 
@@ -23,18 +24,28 @@ You can generate the following types of diagrams:
 - Flowcharts (process flows, decision trees)
 - Architecture diagrams (system components, data flow)
 
+ITERATIVE REFINEMENT:
+When user requests changes to an existing diagram (e.g., 'add a node', 'make it bigger', 'change color to blue', 'move the arrow'), you must MODIFY the CURRENT DIAGRAM below, not create a new one from scratch.
+
+Examples of iterative changes:
+- "add a user approval step" → Add new shape connected to existing flow
+- "make the arrows thicker" → Add style attribute to connections
+- "change the color of server to red" → Modify shape style
+- "add another database" → Add new shape and connection
+
+CRITICAL: Always output ONLY the modified D2 code. Do NOT explain what changed. The user wants to see the result, not a description of changes.
+
 When generating diagrams:
 1. Use proper D2 syntax: https://d2lang.com/tour/intro
 2. Always wrap D2 code in markdown code blocks with the 'd2' language identifier
-3. Provide a brief explanation of what the diagram shows
-4. Keep diagrams clear and readable
+3. Keep diagrams clear and readable
 
 Format your response like this:
 \`\`\`d2
 # Your D2 code here
 \`\`\`
 
-Explain any key elements or design choices after the code block.`;
+If the user asks to modify an existing diagram, output the complete modified D2 code (not just the changes).`;
 
 /**
  * Create a new chat message
@@ -72,22 +83,29 @@ export function useChat() {
    * Includes current D2 for iterative refinement
    */
   const toOllamaMessages = useCallback((history: ChatMessage[], userContent: string): OllamaMessage[] => {
-    const ollamaMessages: OllamaMessage[] = [
-      { role: 'system', content: SYSTEM_PROMPT }
-    ];
+    let systemContent = SYSTEM_PROMPT;
 
-    // Add current D2 to system prompt if available
+    // Add current D2 to system prompt if available for iterative refinement
     if (currentD2) {
-      ollamaMessages[0].content += `\n\nCurrent diagram being refined:\n\`\`\`d2\n${currentD2}\n\`\`\``;
+      systemContent += `\n\nCURRENT DIAGRAM:\n\`\`\`d2\n${currentD2}\n\`\`\``;
     }
+
+    const ollamaMessages: OllamaMessage[] = [
+      { role: 'system', content: systemContent }
+    ];
 
     // Add conversation history (truncated if too long)
     const recentMessages = history.slice(-MAX_MESSAGES);
     
     for (const msg of recentMessages) {
+      // Include D2 source from previous assistant messages if available
+      const content = msg.d2Source 
+        ? `${msg.content}\n\n[Previous diagram for reference:\n\`\`\`d2\n${msg.d2Source}\n\`\`\`]`
+        : msg.content;
+      
       ollamaMessages.push({
         role: msg.role,
-        content: msg.content,
+        content,
       });
     }
 
