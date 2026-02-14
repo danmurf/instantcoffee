@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { renderD2 } from '../lib/d2';
 
 export interface SourceEditorModalProps {
   /** Whether the modal is open */
@@ -9,8 +10,6 @@ export interface SourceEditorModalProps {
   onSave: (newSource: string) => void;
   /** Callback when user closes the modal */
   onClose: () => void;
-  /** Callback for debounced preview updates */
-  onPreview?: (newSource: string) => void;
 }
 
 export function SourceEditorModal({
@@ -18,10 +17,11 @@ export function SourceEditorModal({
   d2Source,
   onSave,
   onClose,
-  onPreview,
 }: SourceEditorModalProps) {
   const [localSource, setLocalSource] = useState(d2Source);
+  const [previewSvg, setPreviewSvg] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -29,6 +29,8 @@ export function SourceEditorModal({
   useEffect(() => {
     if (isOpen) {
       setLocalSource(d2Source);
+      setPreviewSvg('');
+      setPreviewError(null);
     }
   }, [isOpen, d2Source]);
 
@@ -39,10 +41,9 @@ export function SourceEditorModal({
     }
   }, [isOpen]);
 
-  // Handle textarea changes with debounce for live preview
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    setLocalSource(newValue);
+  // Debounced preview rendering
+  useEffect(() => {
+    if (!isOpen) return;
 
     // Clear existing debounce timer
     if (debounceRef.current) {
@@ -50,23 +51,32 @@ export function SourceEditorModal({
     }
 
     // Set new debounce timer for preview
-    if (onPreview) {
-      setIsUpdating(true);
-      debounceRef.current = setTimeout(() => {
-        onPreview(newValue);
-        setIsUpdating(false);
-      }, 300);
-    }
-  };
+    setIsUpdating(true);
+    setPreviewError(null);
 
-  // Cleanup debounce on unmount
-  useEffect(() => {
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const svg = await renderD2(localSource);
+        setPreviewSvg(svg);
+      } catch (err) {
+        setPreviewError(err instanceof Error ? err.message : 'Failed to render preview');
+      } finally {
+        setIsUpdating(false);
+      }
+    }, 300);
+
+    // Cleanup on unmount or when source changes
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, []);
+  }, [isOpen, localSource]);
+
+  // Handle textarea changes
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setLocalSource(e.target.value);
+  };
 
   if (!isOpen) {
     return null;
@@ -90,7 +100,7 @@ export function SourceEditorModal({
       />
 
       {/* Modal content */}
-      <div className="relative z-10 mx-4 flex max-h-[80vh] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
+      <div className="relative z-10 mx-4 flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg bg-white shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -117,33 +127,51 @@ export function SourceEditorModal({
           </button>
         </div>
 
-        {/* Body */}
+        {/* Body - split view: editor + preview */}
         <div className="flex-1 overflow-auto p-6">
-          <div className="relative">
-            <textarea
-              ref={textareaRef}
-              value={localSource}
-              onChange={handleChange}
-              className="h-64 w-full resize-none font-mono text-sm bg-gray-50 p-3 text-gray-800 border border-gray-200 rounded-md focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              placeholder="Enter D2 source code..."
-              spellCheck={false}
-            />
-            {/* Preview updating indicator */}
-            {isUpdating && (
-              <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-indigo-100 px-2 py-1 text-xs text-indigo-700">
-                <div className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600" />
-                Preview updating...
-              </div>
-            )}
-          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Editor pane */}
+            <div className="relative">
+              <h3 className="mb-2 text-sm font-medium text-gray-700">Source</h3>
+              <textarea
+                ref={textareaRef}
+                value={localSource}
+                onChange={handleChange}
+                className="h-72 w-full resize-none font-mono text-sm bg-gray-50 p-3 text-gray-800 border border-gray-200 rounded-md focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                placeholder="Enter D2 source code..."
+                spellCheck={false}
+              />
+              {/* Preview updating indicator */}
+              {isUpdating && (
+                <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-indigo-100 px-2 py-1 text-xs text-indigo-700">
+                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600" />
+                  Updating...
+                </div>
+              )}
+            </div>
 
-          {/* Preview area */}
-          <div className="mt-4">
-            <h3 className="mb-2 text-sm font-medium text-gray-700">Live Preview</h3>
-            <div className="flex h-48 w-full items-center justify-center rounded border border-gray-200 bg-gray-50">
-              <p className="text-sm text-gray-400">
-                {isUpdating ? 'Updating preview...' : 'Preview will appear here'}
-              </p>
+            {/* Preview pane */}
+            <div className="flex flex-col">
+              <h3 className="mb-2 text-sm font-medium text-gray-700">Live Preview</h3>
+              <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-50">
+                {isUpdating ? (
+                  <div className="text-center">
+                    <div className="mb-2 h-6 w-6 animate-spin rounded-full border-2 border-indigo-100 border-t-indigo-600" />
+                    <p className="text-sm text-gray-500">Rendering preview...</p>
+                  </div>
+                ) : previewError ? (
+                  <div className="max-w-xs rounded bg-red-50 p-3 text-center text-sm text-red-600">
+                    {previewError}
+                  </div>
+                ) : previewSvg ? (
+                  <div
+                    className="flex h-full w-full items-center justify-center p-2"
+                    dangerouslySetInnerHTML={{ __html: previewSvg }}
+                  />
+                ) : (
+                  <p className="text-sm text-gray-400">Preview will appear here</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
