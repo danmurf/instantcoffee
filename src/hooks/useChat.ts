@@ -4,12 +4,13 @@
  * Manages chat state and integrates with Ollama for AI-powered diagram generation.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type { ChatMessage, MessageRole, OllamaMessage, StreamCallbacks } from '../types/chat';
 import { streamChat, extractD2Code, formatError, DEFAULT_MODEL } from '../lib/ollama';
 import { renderD2 } from '../lib/d2';
 
 const MAX_MESSAGES = 20;
+const STREAM_DEBOUNCE_MS = 500;
 
 /**
  * System prompt for the D2 diagram generation assistant
@@ -55,6 +56,16 @@ export function useChat() {
   const [currentD2, setCurrentD2] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Streaming state for real-time diagram updates (exposed for UI)
+  const [_streamingContent, setStreamingContent] = useState<string>('');
+  const [_partialD2, setPartialD2] = useState<string>('');
+  const [isDiagramUpdating, setIsDiagramUpdating] = useState<boolean>(false);
+  
+  // Refs for streaming - avoid stale closures
+  const streamingContentRef = useRef<string>('');
+  const lastRenderTimeRef = useRef<number>(0);
+  const partialD2Ref = useRef<string>('');
 
   /**
    * Convert chat messages to Ollama message format
@@ -103,17 +114,55 @@ export function useChat() {
     const userMessage = createMessage('user', trimmedContent);
     setMessages(prev => [...prev, userMessage]);
 
+    // Reset streaming refs for new request
+    streamingContentRef.current = '';
+    partialD2Ref.current = '';
+    lastRenderTimeRef.current = 0;
+
     try {
       // Build API messages
       const apiMessages = toOllamaMessages(messages, trimmedContent);
 
       // Set up streaming callbacks
       const callbacks: StreamCallbacks = {
-        onChunk: (_chunk: string) => {
-          // Could implement streaming display here
-          // For now, we wait for full response
+        onChunk: async (chunk: string) => {
+          // Accumulate streaming content using ref to avoid stale closure
+          streamingContentRef.current += chunk;
+          setStreamingContent(streamingContentRef.current);
+          
+          // Extract D2 from accumulated content
+          const { d2Code } = extractD2Code(streamingContentRef.current);
+          
+          if (d2Code && d2Code !== partialD2Ref.current) {
+            // Check debounce - skip if we rendered too recently
+            const now = Date.now();
+            if (now - lastRenderTimeRef.current >= STREAM_DEBOUNCE_MS) {
+              lastRenderTimeRef.current = now;
+              partialD2Ref.current = d2Code;
+              setIsDiagramUpdating(true);
+              setPartialD2(d2Code);
+              
+              try {
+                // Try to render partial D2 - if it fails, keep previous valid diagram
+                await renderD2(d2Code);
+                setCurrentD2(d2Code);
+              } catch (renderErr) {
+                // If partial D2 fails to render, keep previous valid diagram
+                console.warn('Partial D2 render failed, keeping previous diagram:', renderErr);
+              } finally {
+                setIsDiagramUpdating(false);
+              }
+            }
+          }
         },
         onComplete: async (fullResponse: string) => {
+          // Clear streaming state
+          streamingContentRef.current = '';
+          partialD2Ref.current = '';
+          setStreamingContent('');
+          setPartialD2('');
+          setIsDiagramUpdating(false);
+          
           // Extract D2 code from response
           const { explanation, d2Code } = extractD2Code(fullResponse);
           
@@ -164,5 +213,9 @@ export function useChat() {
     isGenerating,
     error,
     sendMessage,
+    // Streaming state for real-time updates
+    isDiagramUpdating,
+    streamingContent: _streamingContent,
+    partialD2: _partialD2,
   };
 }
