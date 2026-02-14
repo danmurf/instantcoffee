@@ -1,0 +1,118 @@
+# Requirements: Instant Coffee
+
+**Defined:** 2026-02-14
+**Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning D2 syntax.
+
+## v1 Requirements
+
+### Core Experience
+
+- [ ] **CORE-01**: User can type natural language in chat to request diagrams
+- [ ] **CORE-02**: System sends chat to Ollama and receives D2 syntax response
+- [ ] **CORE-03**: System renders D2 as SVG in the whiteboard area
+- [ ] **CORE-04**: Diagram updates in real-time as AI generates response
+- [ ] **CORE-05**: System handles Ollama unavailability gracefully with clear error message
+
+### Diagram Types
+
+- [ ] **DIAG-01**: User can generate sequence diagrams via chat
+- [ ] **DIAG-02**: User can generate ERD (entity-relationship) diagrams via chat
+- [ ] **DIAG-03**: User can generate flowchart diagrams via chat
+- [ ] **DIAG-04**: User can generate architecture diagrams via chat
+
+### Iteration & Editing
+
+- [ ] **ITER-01**: User can request iterative changes ("make it bigger", "add a node")
+- [ ] **ITER-02**: System maintains conversation context for iterative refinement
+- [ ] **EDIT-01**: User can view and manually edit generated D2 source
+- [ ] **EDIT-02**: Manual edits re-render immediately in whiteboard
+
+### Navigation & Controls
+
+- [ ] **NAV-01**: User can zoom in/out on diagram
+- [ ] **NAV-02**: User can pan across diagram
+- [ ] **EDIT-03**: User can undo last diagram change
+- [ ] **EDIT-04**: User can redo undone diagram change
+
+### Export & Save
+
+- [ ] **SAVE-01**: User can export diagram as SVG file
+- [ ] **SAVE-02**: User can export diagram as PNG file
+- [ ] **SAVE-03**: User can save current session state to resume later
+- [ ] **SAVE-04**: User can load previously saved session
+
+### Semantic Memory
+
+- [ ] **MEMO-01**: User can tell system about service names, descriptions, team ownership
+- [ ] **MEMO-02**: System persists semantic memory across sessions
+- [ ] **MEMO-03**: System uses semantic memory context when generating diagrams
+
+### UI/UX
+
+- [ ] **UI-01**: Interface matches modern SaaS product aesthetic
+- [ ] **UI-02**: App runs in browser after simple local setup
+- [ ] **UI-03**: Loading states shown during AI generation
+
+## v2 Requirements
+
+### Input Modes
+
+- **VOICE-01**: User can speak instead of type for diagram requests
+- **VOICE-02**: Speech converted to text for AI processing
+
+### Advanced Features
+
+- **TPLT-01**: User can select from diagram templates for quick starts
+- **HIST-01**: User can view diagram history and rollback to previous versions
+- **PROJ-01**: User can organize multiple diagrams into projects
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Real-time multi-user collaboration | Contradicts local-first principle, adds massive complexity |
+| Cloud deployment | Local POC first, cloud optional future |
+| Mobile app | Web-only for v1 |
+| Plugin/extension system | Adds unnecessary complexity for POC |
+| Cloud sync | Contradicts local-first principle |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| CORE-01 | Phase 1 | Pending |
+| CORE-02 | Phase 2 | Pending |
+| CORE-03 | Phase 1 | Pending |
+| CORE-04 | Phase 2 | Pending |
+| CORE-05 | Phase 2 | Pending |
+| DIAG-01 | Phase 2 | Pending |
+| DIAG-02 | Phase 2 | Pending |
+| DIAG-03 | Phase 2 | Pending |
+| DIAG-04 | Phase 2 | Pending |
+| ITER-01 | Phase 2 | Pending |
+| ITER-02 | Phase 2 | Pending |
+| EDIT-01 | Phase 3 | Pending |
+| EDIT-02 | Phase 3 | Pending |
+| NAV-01 | Phase 3 | Pending |
+| NAV-02 | Phase 3 | Pending |
+| EDIT-03 | Phase 3 | Pending |
+| EDIT-04 | Phase 3 | Pending |
+| SAVE-01 | Phase 3 | Pending |
+| SAVE-02 | Phase 3 | Pending |
+| SAVE-03 | Phase 4 | Pending |
+| SAVE-04 | Phase 4 | Pending |
+| MEMO-01 | Phase 4 | Pending |
+| MEMO-02 | Phase 4 | Pending |
+| MEMO-03 | Phase 4 | Pending |
+| UI-01 | Phase 1 | Pending |
+| UI-02 | Phase 1 | Pending |
+| UI-03 | Phase 2 | Pending |
+
+**Coverage:**
+- v1 requirements: 26 total
+- Mapped to phases: 26
+- Unmapped: 0 ✓
+
+---
+*Requirements defined: 2026-02-14*
+*Last updated: 2026-02-14 after initial definition*
