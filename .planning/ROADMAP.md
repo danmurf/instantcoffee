@@ -70,6 +70,12 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 5. **Error Handling Works:** When Ollama is unavailable, user sees clear error message with setup instructions
 6. **Loading Feedback:** User sees loading indicator while AI is generating response
 
+**Plans:**
+- [ ] 02-01-PLAN.md — Ollama client and types
+- [ ] 02-02-PLAN.md — useChat hook and ChatPanel integration
+- [ ] 02-03-PLAN.md — Real-time streaming diagram updates
+- [ ] 02-04-PLAN.md — Iterative refinement support
+
 ---
 
 ## Phase 3: Editing & Polish
