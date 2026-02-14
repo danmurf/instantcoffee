@@ -5,7 +5,8 @@
  * when waiting for input or encountering errors.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { exportSvg, exportPng } from '../lib/export';
 
 export interface WhiteboardPanelProps {
   /** The rendered SVG diagram to display */
@@ -40,6 +41,8 @@ export function WhiteboardPanel({
   const [isPanning, setIsPanning] = useState<boolean>(false);
   const [startPan, setStartPan] = useState<{ x: number; y: number } | null>(null);
   const [initialPan, setInitialPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [showExportDropdown, setShowExportDropdown] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Reset transform when SVG changes
   useEffect(() => {
@@ -86,6 +89,35 @@ export function WhiteboardPanel({
     setPanX(0);
     setPanY(0);
   }, []);
+
+  // Export handlers
+  const handleExportSvg = useCallback(() => {
+    if (svg) {
+      exportSvg(svg, 'diagram.svg');
+      setShowExportDropdown(false);
+    }
+  }, [svg]);
+
+  const handleExportPng = useCallback(() => {
+    if (svg) {
+      exportPng(svg, 'diagram.png');
+      setShowExportDropdown(false);
+    }
+  }, [svg]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowExportDropdown(false);
+      }
+    };
+
+    if (showExportDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showExportDropdown]);
 
   // Mouse wheel zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -225,6 +257,43 @@ export function WhiteboardPanel({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
             </svg>
           </button>
+          
+          {/* Divider */}
+          <div className="mx-1 h-6 w-px bg-gray-200"></div>
+          
+          {/* Export dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+              className="flex h-8 w-8 items-center justify-center rounded text-gray-700 hover:bg-gray-100"
+              title="Export"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <svg className="ml-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {/* Dropdown menu */}
+            {showExportDropdown && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded border border-gray-200 bg-white py-1 shadow-lg">
+                <button
+                  onClick={handleExportSvg}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Export as SVG
+                </button>
+                <button
+                  onClick={handleExportPng}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Export as PNG
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Scale indicator */}
