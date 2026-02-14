@@ -1,0 +1,178 @@
+// Ollama API client with streaming support for chat-to-diagram loop
+
+import type { OllamaMessage, StreamCallbacks } from '../types/chat';
+
+/** Base URL for Ollama API */
+export const OLLAMA_BASE = 'http://localhost:11434';
+
+/** Default model to use for chat */
+export const DEFAULT_MODEL = 'llama3.2';
+
+/** Timeout for health check in milliseconds */
+export const HEALTH_TIMEOUT = 5000;
+
+/**
+ * Check if Ollama is running and accessible
+ * @returns Promise<boolean> - true if Ollama is healthy, false otherwise
+ */
+export async function checkOllamaHealth(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), HEALTH_TIMEOUT);
+
+    const response = await fetch(OLLAMA_BASE, {
+      method: 'GET',
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Stream chat response from Ollama
+ * @param model - Model name to use
+ * @param messages - Array of messages for context
+ * @param callbacks - Stream handling callbacks
+ * @returns Promise<string> - Full response text
+ */
+export async function streamChat(
+  model: string,
+  messages: OllamaMessage[],
+  callbacks: StreamCallbacks
+): Promise<string> {
+  const abortController = new AbortController();
+  let fullResponse = '';
+
+  try {
+    const response = await fetch(`${OLLAMA_BASE}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: true,
+      }),
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      const error = new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+      callbacks.onError(error);
+      throw error;
+    }
+
+    if (!response.body) {
+      const error = new Error('No response body from Ollama');
+      callbacks.onError(error);
+      throw error;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter((line) => line.trim() !== '');
+
+      for (const line of lines) {
+        try {
+          const data = JSON.parse(line);
+          const content = data.message?.content;
+
+          if (content) {
+            fullResponse += content;
+            callbacks.onChunk(content);
+          }
+        } catch {
+          // Skip invalid JSON lines
+        }
+      }
+    }
+
+    callbacks.onComplete(fullResponse);
+    return fullResponse;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      const timeoutError = new Error('Request timed out');
+      callbacks.onError(timeoutError);
+      throw timeoutError;
+    }
+    callbacks.onError(error instanceof Error ? error : new Error(String(error)));
+    throw error;
+  }
+}
+
+/**
+ * Extract D2 code from an AI response
+ * Looks for markdown code blocks with 'd2' language identifier
+ * @param response - Full AI response text
+ * @returns Object with explanation and extracted D2 code
+ */
+export function extractD2Code(
+  response: string
+): { explanation: string; d2Code: string } {
+  // Try to match d2 code block
+  const d2BlockMatch = response.match(/```d2\n([\s\S]*?)```/);
+
+  if (d2BlockMatch) {
+    const d2Code = d2BlockMatch[1];
+    const explanation = response.replace(d2BlockMatch[0], '').trim();
+    return { explanation, d2Code };
+  }
+
+  // Fallback: check if response looks like D2 (has : and [ characters)
+  if (response.includes(':') && response.includes('[')) {
+    return { explanation: '', d2Code: response };
+  }
+
+  // No D2 found
+  return { explanation: response, d2Code: '' };
+}
+
+/**
+ * Format errors into user-friendly messages
+ * @param error - Error object or unknown
+ * @returns Formatted error message string
+ */
+export function formatError(error: Error | unknown): string {
+  if (!(error instanceof Error)) {
+    return 'An unknown error occurred';
+  }
+
+  const message = error.message.toLowerCase();
+
+  // Connection refused
+  if (message.includes('connection refused') || message.includes('fetch failed')) {
+    return 'Cannot connect to Ollama. Please ensure Ollama is running on your system.';
+  }
+
+  // Timeout
+  if (message.includes('timeout') || message.includes('abort')) {
+    return 'Request timed out. Ollama may be taking too long to respond.';
+  }
+
+  // Model not found
+  if (message.includes('model not found') || message.includes('not found')) {
+    return `Model not found. Please ensure the model is installed.`;
+  }
+
+  // Rate limit
+  if (message.includes('rate limit') || message.includes('too many requests')) {
+    return 'Rate limit exceeded. Please wait a moment and try again.';
+  }
+
+  // Default: return the original message
+  return error.message;
+}
