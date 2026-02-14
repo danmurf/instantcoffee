@@ -45,19 +45,6 @@ export function Layout({
     };
   }, [isDragging]);
 
-  // Check if we're on desktop (md breakpoint = 768px)
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    const checkDesktop = () => {
-      setIsDesktop(window.innerWidth >= 768);
-    };
-    
-    checkDesktop();
-    window.addEventListener('resize', checkDesktop);
-    return () => window.removeEventListener('resize', checkDesktop);
-  }, []);
-
   return (
     <div 
       ref={containerRef}
