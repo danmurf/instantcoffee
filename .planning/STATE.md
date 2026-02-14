@@ -3,7 +3,7 @@
 **Project:** Instant Coffee  
 **Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning D2 syntax.  
 **Current Phase:** 02-core-chat-to-diagram-loop  
-**Current Plan:** 02-01 (Complete)
+**Current Plan:** 02-02 (Complete)
 
 ---
 
@@ -12,9 +12,9 @@
 | Attribute | Value |
 |-----------|-------|
 | **Phase** | 02-core-chat-to-diagram-loop |
-| **Plan** | 02-01 (Complete) |
+| **Plan** | 02-02 (Complete) |
 | **Status** | In Progress |
-| **Progress Bar** | [======......] 31% (1.25 of 4 phases complete) |
+| **Progress Bar** | [==========] 50% (2 of 4 phases complete) |
 
 ---
 
@@ -52,7 +52,7 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 - **Goal:** Users can create diagrams through conversation
 - **Requirements:** CORE-02, CORE-04, CORE-05, DIAG-01 through DIAG-04, ITER-01, ITER-02, UI-03 (10)
 - **Success Criteria:** 6 observable behaviors
-- **Plans:** 02-01 (done) ✓, 02-02 (pending), 02-03 (pending), 02-04 (pending)
+- **Plans:** 02-01 (done) ✓, 02-02 (done) ✓, 02-03 (pending), 02-04 (pending)
 
 ### Phase 3: Editing & Polish
 - **Goal:** Users can manually edit and export diagrams
@@ -86,7 +86,7 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 - [x] Execute 01-02-PLAN.md (Chat panel and layout)
 - [x] Execute 01-03-PLAN.md (D2 rendering pipeline)
 - [x] Execute 02-01-PLAN.md (Ollama client and types)
-- [ ] Execute 02-02-PLAN.md (useChat hook)
+- [x] Execute 02-02-PLAN.md (useChat hook)
 - [ ] Execute 02-03-PLAN.md (Streaming updates)
 - [ ] Execute 02-04-PLAN.md (Iterative refinement)
 - [ ] Plan Phase 3
@@ -102,8 +102,8 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 ## Session Continuity
 
 **Last Updated:** 2026-02-14  
-**Phase Status:** Phase 2 in progress (plan 02-01 complete)  
-**Next Step:** Execute 02-02-PLAN.md (useChat hook)
+**Phase Status:** Phase 2 in progress (plan 02-02 complete)  
+**Next Step:** Execute 02-03-PLAN.md (Streaming updates)
 
 ---
 
