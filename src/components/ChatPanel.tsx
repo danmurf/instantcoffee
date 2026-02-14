@@ -1,21 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { useChat } from '../hooks/useChat';
 
 const EXAMPLE_PROMPTS = [
   "Create a sequence diagram for user login",
   "Make an ERD for an e-commerce app",
-  "Draw a flowchart for order processing"
+  "Draw a flowchart for order processing",
+  "Show an architecture diagram for a web app"
 ];
 
 export function ChatPanel() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { messages: chatMessages, isGenerating, error, sendMessage } = useChat();
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -25,7 +20,7 @@ export function ChatPanel() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [chatMessages]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -39,23 +34,12 @@ export function ChatPanel() {
     e?.preventDefault();
     
     const trimmedInput = input.trim();
-    if (!trimmedInput || isLoading) return;
+    if (!trimmedInput || isGenerating) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: trimmedInput
-    };
-
-    setMessages(prev => [...prev, userMessage]);
     setInput('');
-    setIsLoading(true);
-
-    // TODO: Send to backend API when ready
-    // For now, just show the message
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
+    
+    // Use the useChat hook to send the message
+    await sendMessage(trimmedInput);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -70,7 +54,7 @@ export function ChatPanel() {
     textareaRef.current?.focus();
   };
 
-  const showWelcome = messages.length === 0;
+  const showWelcome = chatMessages.length === 0;
 
   return (
     <div className="flex h-full flex-col bg-white">
@@ -78,6 +62,18 @@ export function ChatPanel() {
       <div className="border-b border-gray-200 px-4 py-3">
         <h2 className="text-lg font-semibold text-gray-900">Chat</h2>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 p-3">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+          </svg>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-red-800">{error}</p>
+          </div>
+        </div>
+      )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -107,7 +103,7 @@ export function ChatPanel() {
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message) => (
+            {chatMessages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${
@@ -125,7 +121,7 @@ export function ChatPanel() {
                 </div>
               </div>
             ))}
-            {isLoading && (
+            {isGenerating && (
               <div className="flex justify-start">
                 <div className="rounded-lg bg-gray-100 px-4 py-2">
                   <div className="flex space-x-1">
@@ -157,7 +153,7 @@ export function ChatPanel() {
           </div>
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isGenerating}
             className="flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg
