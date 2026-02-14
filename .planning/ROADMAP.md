@@ -131,6 +131,13 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 4. **Memory Persists:** Semantic memory survives browser sessions (stored in IndexedDB)
 5. **Memory Used:** When generating diagrams, system includes relevant memory context in prompts
 
+**Status:** Planned (3 plans)
+
+**Plans:**
+- [ ] 04-01-PLAN.md — Session persistence (save/load using Dexie.js)
+- [ ] 04-02-PLAN.md — Semantic memory storage and UI
+- [ ] 04-03-PLAN.md — Memory integration into AI prompts
+
 ---
 
 ## Progress Table
@@ -139,8 +146,8 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 |-------|------|--------------|--------|
 | 1 | Foundation & Rendering Pipeline | 4 | ✓ Complete |
 | 2 | Core Chat-to-Diagram Loop | 10 | ✓ Complete |
-| 3 | Editing & Polish | 8 | Planned (3 plans) |
-| 4 | Persistence & Semantic Memory | 4 | Pending |
+| 3 | Editing & Polish | 8 | ✓ Complete |
+| 4 | Persistence & Semantic Memory | 5 | Planned (3 plans) |
 
 ---
 
