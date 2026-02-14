@@ -103,6 +103,8 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 7. **SVG Export Works:** User can download current diagram as SVG file
 8. **PNG Export Works:** User can download current diagram as PNG file
 
+**Status:** ✓ Complete (2026-02-14)
+
 **Plans:**
 - [x] 03-01-PLAN.md — Source editor modal with live preview
 - [x] 03-02-PLAN.md — Zoom/pan navigation + undo/redo
