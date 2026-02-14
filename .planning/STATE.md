@@ -2,8 +2,8 @@
 
 **Project:** Instant Coffee  
 **Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning D2 syntax.  
-**Current Phase:** 01-foundation-rendering  
-**Current Plan:** 01-03 (Complete)
+**Current Phase:** 02-core-chat-to-diagram-loop  
+**Current Plan:** 02-01 (Complete)
 
 ---
 
@@ -11,10 +11,10 @@
 
 | Attribute | Value |
 |-----------|-------|
-| **Phase** | 01-foundation-rendering |
-| **Plan** | 01-03 (Complete)
-| **Status** | Complete |
-| **Progress Bar** | [======....] 25% (1 of 4 phases complete) |
+| **Phase** | 02-core-chat-to-diagram-loop |
+| **Plan** | 02-01 (Complete) |
+| **Status** | In Progress |
+| **Progress Bar** | [======......] 31% (1.25 of 4 phases complete) |
 
 ---
 
@@ -49,10 +49,10 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 
 ### Phase 2: Core Chat-to-Diagram Loop
 
-### Phase 2: Core Chat-to-Diagram Loop
 - **Goal:** Users can create diagrams through conversation
 - **Requirements:** CORE-02, CORE-04, CORE-05, DIAG-01 through DIAG-04, ITER-01, ITER-02, UI-03 (10)
 - **Success Criteria:** 6 observable behaviors
+- **Plans:** 02-01 (done) ✓, 02-02 (pending), 02-03 (pending), 02-04 (pending)
 
 ### Phase 3: Editing & Polish
 - **Goal:** Users can manually edit and export diagrams
@@ -74,6 +74,7 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 - **Dependencies respected:** Each phase builds on previous
 - **Phase 1-01:** Vite 6.x + React 18.x + Express 4.x + Tailwind CSS
 - **Phase 1-02:** Indigo accent color, md breakpoint for responsive layout
+- **Phase 2-01:** Ollama client with native fetch/ReadableStream (no external deps), llama3.2 model default
 
 ### Research Flags (for planning phases)
 - **Phase 2:** Prompt engineering for D2 generation needs iteration
@@ -84,8 +85,10 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 - [x] Execute 01-01-PLAN.md
 - [x] Execute 01-02-PLAN.md (Chat panel and layout)
 - [x] Execute 01-03-PLAN.md (D2 rendering pipeline)
-- [ ] Plan Phase 2
-- [ ] Execute Phase 2
+- [x] Execute 02-01-PLAN.md (Ollama client and types)
+- [ ] Execute 02-02-PLAN.md (useChat hook)
+- [ ] Execute 02-03-PLAN.md (Streaming updates)
+- [ ] Execute 02-04-PLAN.md (Iterative refinement)
 - [ ] Plan Phase 3
 - [ ] Execute Phase 3
 - [ ] Plan Phase 4
@@ -99,8 +102,8 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 ## Session Continuity
 
 **Last Updated:** 2026-02-14  
-**Phase Status:** Phase 1 complete  
-**Next Step:** Plan Phase 2 (Core Chat-to-Diagram Loop)
+**Phase Status:** Phase 2 in progress (plan 02-01 complete)  
+**Next Step:** Execute 02-02-PLAN.md (useChat hook)
 
 ---
 
