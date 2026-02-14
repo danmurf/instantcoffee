@@ -45,33 +45,59 @@ export function Layout({
     };
   }, [isDragging]);
 
+  // Check if we're on desktop (md breakpoint = 768px)
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
+
   return (
     <div 
       ref={containerRef}
       className="flex h-screen w-full bg-white"
     >
-      {/* Left Panel */}
-      <div 
-        className="h-full overflow-hidden border-r border-gray-200"
-        style={{ width: `${leftWidth}%` }}
-      >
-        {leftPanel}
+      {/* Mobile: Stack vertically */}
+      <div className="flex w-full flex-col md:hidden">
+        <div className="h-1/2 overflow-hidden border-b border-gray-200">
+          {leftPanel}
+        </div>
+        <div className="h-1/2 overflow-hidden bg-gray-50">
+          {rightPanel}
+        </div>
       </div>
 
-      {/* Resizable Divider */}
-      <div
-        className={`h-full w-1 cursor-col-resize bg-gray-200 hover:bg-indigo-500 transition-colors ${
-          isDragging ? 'bg-indigo-500' : ''
-        }`}
-        onMouseDown={() => setIsDragging(true)}
-      />
+      {/* Desktop: Side-by-side with resizable divider */}
+      <div className="hidden md:flex md:w-full">
+        {/* Left Panel */}
+        <div 
+          className="h-full overflow-hidden border-r border-gray-200"
+          style={{ width: `${leftWidth}%` }}
+        >
+          {leftPanel}
+        </div>
 
-      {/* Right Panel */}
-      <div 
-        className="h-full overflow-hidden bg-gray-50"
-        style={{ width: `${100 - leftWidth}%` }}
-      >
-        {rightPanel}
+        {/* Resizable Divider */}
+        <div
+          className={`h-full w-1 cursor-col-resize bg-gray-200 hover:bg-indigo-500 transition-colors ${
+            isDragging ? 'bg-indigo-500' : ''
+          }`}
+          onMouseDown={() => setIsDragging(true)}
+        />
+
+        {/* Right Panel */}
+        <div 
+          className="h-full overflow-hidden bg-gray-50"
+          style={{ width: `${100 - leftWidth}%` }}
+        >
+          {rightPanel}
+        </div>
       </div>
     </div>
   );
