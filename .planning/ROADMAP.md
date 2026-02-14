@@ -103,6 +103,11 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 7. **SVG Export Works:** User can download current diagram as SVG file
 8. **PNG Export Works:** User can download current diagram as PNG file
 
+**Plans:**
+- [x] 03-01-PLAN.md — Source editor modal with live preview
+- [x] 03-02-PLAN.md — Zoom/pan navigation + undo/redo
+- [x] 03-03-PLAN.md — SVG/PNG export dropdown
+
 ---
 
 ## Phase 4: Persistence & Semantic Memory
@@ -131,8 +136,8 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 | Phase | Goal | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 | Foundation & Rendering Pipeline | 4 | ✓ Complete |
-| 2 | Core Chat-to-Diagram Loop | 10 | Pending |
-| 3 | Editing & Polish | 8 | Pending |
+| 2 | Core Chat-to-Diagram Loop | 10 | ✓ Complete |
+| 3 | Editing & Polish | 8 | Planned (3 plans) |
 | 4 | Persistence & Semantic Memory | 4 | Pending |
 
 ---
