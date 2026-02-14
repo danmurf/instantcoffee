@@ -25,7 +25,8 @@ async function checkD2() {
 
 // Render D2 to SVG
 async function renderD2(d2Source) {
-  const command = `echo ${JSON.stringify(d2Source)} | d2 -`
+  // Use printf to avoid echo's quote-handling issues
+  const command = `printf '%s' ${JSON.stringify(d2Source)} | d2 -`
   const { stdout, stderr } = await execAsync(command, { shell: '/bin/bash' })
   return stdout
 }

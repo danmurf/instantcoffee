@@ -6,7 +6,7 @@ import type { OllamaMessage, StreamCallbacks } from '../types/chat';
 export const OLLAMA_BASE = 'http://localhost:11434';
 
 /** Default model to use for chat */
-export const DEFAULT_MODEL = 'llama3.2';
+export const DEFAULT_MODEL = 'gpt-oss:20b';
 
 /** Timeout for health check in milliseconds */
 export const HEALTH_TIMEOUT = 5000;
