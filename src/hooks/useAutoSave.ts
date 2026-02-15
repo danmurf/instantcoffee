@@ -12,14 +12,18 @@ interface UseAutoSaveOptions {
 
 export function useAutoSave({ sessionState, enabled }: UseAutoSaveOptions) {
   const { currentSessionId, setCurrentSessionId, setHasUnsavedChanges } = useSessionStore();
-  
-  // Use ref to hold the debounce timer
+
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
-  // Use ref to hold the stable version of session state for comparison
-  const prevStateRef = useRef<string>('');
-  
-  // Get a stable string representation of key state fields for comparison
+  const prevStateRef = useRef<string | null>(null);
+  const prevMessagesLengthRef = useRef<number>(sessionState.messages.length);
+  // Use a ref for currentSessionId so the debounce timer always has the latest value
+  const sessionIdRef = useRef<number | null>(currentSessionId);
+  sessionIdRef.current = currentSessionId;
+
+  // Guard against concurrent saves — queue the latest state if a save is in progress
+  const isSavingRef = useRef(false);
+  const pendingSaveRef = useRef<SessionState | null>(null);
+
   const getStateKey = useCallback((state: SessionState): string => {
     return JSON.stringify({
       messagesLength: state.messages.length,
@@ -27,82 +31,115 @@ export function useAutoSave({ sessionState, enabled }: UseAutoSaveOptions) {
       historyIndex: state.historyIndex,
     });
   }, []);
-  
-  const performSave = useCallback(async (state: SessionState, sessionId: number | null) => {
+
+  const performSave = useCallback(async (state: SessionState) => {
+    if (isSavingRef.current) {
+      // A save is already running — queue this state so it's saved after
+      pendingSaveRef.current = state;
+      return;
+    }
+
+    isSavingRef.current = true;
     try {
+      const sessionId = sessionIdRef.current;
       if (sessionId === null) {
-        // Create new session
         const newId = await createSession(state);
         setCurrentSessionId(newId);
       } else {
-        // Update existing session
         await updateSession(sessionId, state);
       }
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Failed to save session:', error);
+    } finally {
+      isSavingRef.current = false;
+
+      // If another save was queued while we were writing, flush it now
+      const queued = pendingSaveRef.current;
+      if (queued) {
+        pendingSaveRef.current = null;
+        await performSave(queued);
+      }
     }
   }, [setCurrentSessionId, setHasUnsavedChanges]);
-  
+
   const flushSave = useCallback(async () => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
-    
-    if (currentSessionId !== null || sessionState.messages.length > 0 || sessionState.mermaidSource !== '') {
-      await performSave(sessionState, currentSessionId);
+
+    // Only save if user has actually interacted (has messages)
+    if (sessionState.messages.length > 0 || sessionIdRef.current !== null) {
+      await performSave(sessionState);
     }
-  }, [currentSessionId, sessionState, performSave]);
-  
+  }, [sessionState, performSave]);
+
   useEffect(() => {
     if (!enabled) return;
-    
+
     const stateKey = getStateKey(sessionState);
-    
+
+    // On first render, just record the initial state — don't treat it as a change
+    if (prevStateRef.current === null) {
+      prevStateRef.current = stateKey;
+      prevMessagesLengthRef.current = sessionState.messages.length;
+      return;
+    }
+
     // Check if state actually changed
     if (stateKey === prevStateRef.current) {
       return;
     }
-    
+
     prevStateRef.current = stateKey;
-    
-    // Mark as having unsaved changes
+
+    // Only mark as dirty if user has actually done something (has messages or an existing session)
+    if (sessionState.messages.length === 0 && sessionIdRef.current === null) {
+      return;
+    }
+
     setHasUnsavedChanges(true);
-    
-    // Clear previous timer
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
-    // Start new debounce timer
+
+    // Detect whether message count changed (new message added)
+    const messagesChanged = sessionState.messages.length !== prevMessagesLengthRef.current;
+    prevMessagesLengthRef.current = sessionState.messages.length;
+
+    // Save immediately for new sessions or when a new message arrives
+    if (sessionIdRef.current === null || messagesChanged) {
+      performSave(sessionState);
+      return;
+    }
+
+    // Debounce mermaid/history-only changes
     debounceTimerRef.current = setTimeout(async () => {
-      await performSave(sessionState, currentSessionId);
+      await performSave(sessionState);
     }, DEFAULT_DEBOUNCE_MS);
-    
+
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [sessionState, enabled, currentSessionId, performSave, setHasUnsavedChanges, getStateKey]);
-  
-  // Flush on unmount
-  useEffect(() => {
-    return () => {
-      // Immediate flush on unmount
-      if (currentSessionId !== null || sessionState.messages.length > 0 || sessionState.mermaidSource !== '') {
-        // Synchronous save not possible with IndexedDB, but we trigger one last save
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-        // The save will happen in the cleanup, but IndexedDB is async
-        // For critical data, the user should manually save
-      }
-    };
+  }, [sessionState, enabled, performSave, setHasUnsavedChanges, getStateKey]);
+
+  // Reset change tracking — call after loading a session or starting fresh
+  // so the next state is treated as a baseline, not a change
+  const resetTracking = useCallback(() => {
+    prevStateRef.current = null;
+    prevMessagesLengthRef.current = 0;
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
   }, []);
-  
+
   return {
     flushSave,
+    resetTracking,
   };
 }

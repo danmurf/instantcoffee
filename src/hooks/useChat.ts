@@ -8,7 +8,7 @@ import { useState, useCallback, useRef } from 'react';
 import type { ChatMessage, MessageRole, OllamaMessage, OllamaTool, StreamCallbacks, ToolCall } from '../types/chat';
 import { streamChatWithTools, extractMermaidCode, formatError, DEFAULT_MODEL } from '../lib/ollama';
 import { renderMermaid } from '../lib/mermaid';
-import { getAllMemoriesForPrompt, createMemory, deleteMemory } from '../db/memories';
+import { getAllMemoriesForPrompt, createMemory, deleteMemory, updateMemory } from '../db/memories';
 import { db } from '../db';
 
 const MAX_MESSAGES = 20;
@@ -73,6 +73,28 @@ export const deleteMemoryTool: OllamaTool = {
   },
 };
 
+export const updateMemoryTool: OllamaTool = {
+  type: 'function',
+  function: {
+    name: 'update_memory',
+    description: 'Update an existing memory when new information contradicts or refines it. Matches the old content case-insensitively and replaces it with the new content.',
+    parameters: {
+      type: 'object',
+      properties: {
+        old_content: {
+          type: 'string',
+          description: 'A substring of the existing memory to find (matched case-insensitively)',
+        },
+        new_content: {
+          type: 'string',
+          description: 'The replacement memory text',
+        },
+      },
+      required: ['old_content', 'new_content'],
+    },
+  },
+};
+
 const SYSTEM_PROMPT = `You are a helpful assistant that can create and modify Mermaid diagrams on a whiteboard.
 
 You have an 'update_diagram' tool that updates the whiteboard. Follow these rules strictly:
@@ -101,13 +123,16 @@ Sequence, ERD, Flowchart, Architecture, Class, State, Pie chart
 Keep diagrams clear and readable. Use proper Mermaid syntax.
 
 MEMORY TOOLS:
-You also have 'save_memory' and 'delete_memory' tools.
-- Use 'save_memory' when the user shares context they'd like you to remember — team info, service details, preferences, naming conventions, etc.
+You have 'save_memory', 'delete_memory', and 'update_memory' tools.
+- **Proactively save** relevant facts whenever you create or modify a diagram — entity names, relationships between entities, domain terminology, structural preferences, and design decisions.
+- Use 'save_memory' for new facts not already covered in USER'S CONTEXT.
+- Use 'update_memory' when new information contradicts or refines an existing memory listed in USER'S CONTEXT. Pass a substring of the old memory as 'old_content' and the corrected full statement as 'new_content'.
 - Use 'delete_memory' when the user asks you to forget something.
-- Do NOT save trivial conversational info. Only save things the user would want persisted across sessions.
-- IMPORTANT: Split information into small, atomic memories — one fact per item in the memories array. For example, "Alice is on the backend team and Bob is on the frontend team" should become two items: ["Alice is on the backend team", "Bob is on the frontend team"].
+- IMPORTANT: Split information into small, atomic memories — one fact per item. For example, "The login system supports OAuth and email/password" should become two items: ["The login system supports OAuth authentication", "The login system supports email/password authentication"].
 - Each memory should be a self-contained statement that makes sense on its own.
-- Prefer specific, factual statements over vague summaries.`;
+- Prefer specific, factual statements over vague summaries.
+- Do NOT save diagram syntax or Mermaid code — only save semantic knowledge about the domain.
+- Do NOT save transient or trivial info (e.g. "user asked for a flowchart", "user said hello").`;
 
 function createMessage(role: MessageRole, content: string): ChatMessage {
   return {
@@ -132,6 +157,7 @@ export function useChat() {
   const streamingContentRef = useRef<string>('');
   const lastRenderTimeRef = useRef<number>(0);
   const partialMermaidRef = useRef<string>('');
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const toOllamaMessages = useCallback(async (history: ChatMessage[], userContent: string): Promise<OllamaMessage[]> => {
     let systemContent = SYSTEM_PROMPT;
@@ -182,6 +208,11 @@ export function useChat() {
     partialMermaidRef.current = '';
     lastRenderTimeRef.current = 0;
 
+    // Cancel any in-flight request
+    abortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       const apiMessages = await toOllamaMessages(messages, trimmedContent);
 
@@ -223,7 +254,7 @@ export function useChat() {
       };
 
       // Use streamChatWithTools to enable tool calling
-      const result = await streamChatWithTools(DEFAULT_MODEL, apiMessages, [diagramTool, saveMemoryTool, deleteMemoryTool], callbacks);
+      const result = await streamChatWithTools(DEFAULT_MODEL, apiMessages, [diagramTool, saveMemoryTool, deleteMemoryTool, updateMemoryTool], callbacks, abortController.signal);
       
       // Handle tool calls if the model used them
       if (result.toolCalls && result.toolCalls.length > 0) {
@@ -231,9 +262,12 @@ export function useChat() {
       }
 
     } catch (err) {
+      // Silently ignore aborted requests (e.g. session switch)
+      if (err instanceof Error && err.name === 'AbortError') return;
       const formattedError = formatError(err);
       setError(formattedError);
     } finally {
+      abortControllerRef.current = null;
       setIsGenerating(false);
     }
   }, [messages, toOllamaMessages]);
@@ -291,6 +325,28 @@ export function useChat() {
         } catch {
           console.error('Failed to parse save_memory arguments:', toolCall.arguments);
         }
+      } else if (toolCall.name === 'update_memory') {
+        try {
+          const args = JSON.parse(toolCall.arguments);
+          const oldContent = args.old_content || '';
+          const newContent = args.new_content || '';
+
+          if (oldContent && newContent) {
+            const allMemories = await db.memories.toArray();
+            const existing = allMemories.find(m =>
+              m.content.toLowerCase().includes(oldContent.toLowerCase())
+            );
+            if (existing) {
+              await updateMemory(existing.id!, { content: newContent });
+            } else {
+              // No match found — save as new memory instead
+              await createMemory(newContent);
+            }
+            memoryActionTaken = true;
+          }
+        } catch {
+          console.error('Failed to parse update_memory arguments:', toolCall.arguments);
+        }
       } else if (toolCall.name === 'delete_memory') {
         try {
           const args = JSON.parse(toolCall.arguments);
@@ -329,6 +385,17 @@ export function useChat() {
     }
   }, []);
 
+  const cancelGeneration = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsGenerating(false);
+    setStreamingContent('');
+    setPartialMermaid('');
+    setIsDiagramUpdating(false);
+    streamingContentRef.current = '';
+    partialMermaidRef.current = '';
+  }, []);
+
   return {
     messages,
     currentMermaid,
@@ -336,6 +403,7 @@ export function useChat() {
     isGenerating,
     error,
     sendMessage,
+    cancelGeneration,
     isDiagramUpdating,
     setMessages,
     streamingContent: _streamingContent,

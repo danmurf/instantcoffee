@@ -59,7 +59,7 @@ const DEMO_MERMAID = `flowchart TD
 function App() {
   const chat = useChat();
   const { sessions } = useSessions();
-  const { currentSessionId, hasUnsavedChanges, setCurrentSessionId, setHasUnsavedChanges } = useSessionStore();
+  const { currentSessionId, setCurrentSessionId, setHasUnsavedChanges } = useSessionStore();
   
   const [svg, setSvg] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -83,10 +83,28 @@ function App() {
   };
 
   // Auto-save hook
-  const { flushSave } = useAutoSave({
+  const { flushSave, resetTracking } = useAutoSave({
     sessionState,
     enabled: true,
   });
+
+  // Save on tab close / navigate away
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      flushSave();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushSave();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [flushSave]);
 
   useEffect(() => {
     if (chat.currentSvg) {
@@ -196,15 +214,13 @@ function App() {
 
   // Load session state - restores app from saved session
   const loadSessionState = useCallback(async (state: SessionState) => {
-    // Set messages
     chat.setMessages(state.messages);
-    
-    // Set diagram source
+
     if (state.mermaidSource) {
       setMermaidSource(state.mermaidSource);
       setHistory(state.history);
       setHistoryIndex(state.historyIndex);
-      
+
       try {
         const renderedSvg = await renderMermaid(state.mermaidSource);
         setSvg(renderedSvg);
@@ -212,28 +228,23 @@ function App() {
         setError(err instanceof Error ? err.message : 'Failed to render diagram');
       }
     }
-    
+
     setHasUnsavedChanges(false);
   }, [chat, setHasUnsavedChanges]);
 
-  // Handle session selection
+  // Handle session selection — auto-saves current session before switching
   const handleSelectSession = useCallback(async (sessionId: number) => {
-    // Check for unsaved changes
-    if (hasUnsavedChanges) {
-      const confirmed = window.confirm('You have unsaved changes. Switch session anyway?');
-      if (!confirmed) return;
-    }
-    
-    // Flush any pending saves
+    chat.cancelGeneration();
     await flushSave();
-    
-    // Load the session
+
     const session = await loadSession(sessionId);
     if (session) {
-      await loadSessionState(session.state);
       setCurrentSessionId(sessionId);
+      await loadSessionState(session.state);
+      // Reset tracking so loaded state isn't treated as a new change
+      resetTracking();
     }
-  }, [hasUnsavedChanges, flushSave, loadSessionState, setCurrentSessionId]);
+  }, [flushSave, loadSessionState, setCurrentSessionId, resetTracking]);
 
   // Handle session deletion
   const handleDeleteSession = useCallback(async (sessionId: number) => {
@@ -246,29 +257,28 @@ function App() {
 
   // Handle new session - saves current and starts fresh
   const handleNewSession = useCallback(async () => {
-    // Flush any pending saves
+    chat.cancelGeneration();
     await flushSave();
-    
-    // Reset all state
+
     chat.setMessages([]);
     setMermaidSource(DEMO_MERMAID);
     setHistory([DEMO_MERMAID]);
     setHistoryIndex(0);
     setSvg('');
     setError(null);
-    
-    // Reset session store
+
     setCurrentSessionId(null);
     setHasUnsavedChanges(false);
-    
-    // Render demo
+    // Reset tracking so the fresh demo state isn't treated as a change
+    resetTracking();
+
     try {
       const renderedSvg = await renderMermaid(DEMO_MERMAID);
       setSvg(renderedSvg);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to render demo');
     }
-  }, [chat, flushSave, setCurrentSessionId, setHasUnsavedChanges]);
+  }, [chat, flushSave, setCurrentSessionId, setHasUnsavedChanges, resetTracking]);
 
   return (
     <>
@@ -277,7 +287,6 @@ function App() {
           <SessionSidebar
             sessions={sessions ?? []}
             currentSessionId={currentSessionId}
-            hasUnsavedChanges={hasUnsavedChanges}
             onSelectSession={handleSelectSession}
             onNewSession={handleNewSession}
             onDeleteSession={handleDeleteSession}

@@ -5,7 +5,6 @@ import { MemoryPanel } from './MemoryPanel';
 interface SessionSidebarProps {
   sessions: Session[];
   currentSessionId: number | null;
-  hasUnsavedChanges: boolean;
   onSelectSession: (id: number) => void;
   onNewSession: () => void;
   onDeleteSession: (id: number) => void;
@@ -37,7 +36,6 @@ function formatRelativeTime(timestamp: number): string {
 export function SessionSidebar({
   sessions,
   currentSessionId,
-  hasUnsavedChanges,
   onSelectSession,
   onNewSession,
   onDeleteSession,
@@ -143,9 +141,6 @@ export function SessionSidebar({
                     </svg>
                   </button>
                 </div>
-                {currentSessionId === session.id && hasUnsavedChanges && (
-                  <span className="text-xs text-amber-500">Unsaved changes</span>
-                )}
               </div>
             ))}
           </div>

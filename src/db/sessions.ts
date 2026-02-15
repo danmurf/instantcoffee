@@ -1,37 +1,50 @@
 import { db } from './index';
 import type { Session, SessionState } from '../types/session';
+import { generateSessionTitle } from '../lib/ollama';
 
 /**
- * Generate a session name from the first user message
+ * Generate a fallback session name from the first user message
  */
-function generateSessionName(state: SessionState): string {
+function generateFallbackName(state: SessionState): string {
   const firstUserMessage = state.messages.find(m => m.role === 'user');
-  
+
   if (!firstUserMessage) {
     return 'New Diagram';
   }
-  
+
   const content = firstUserMessage.content;
-  // Truncate to 50 chars
   const truncated = content.length > 50 ? content.substring(0, 50) + '...' : content;
   return truncated;
 }
 
 /**
- * Create a new session
+ * Create a new session. Saves immediately with a fallback name,
+ * then asynchronously generates an AI title and updates the session.
  */
 export async function createSession(state: SessionState): Promise<number> {
-  const name = generateSessionName(state);
+  const fallbackName = generateFallbackName(state);
   const now = Date.now();
-  
+
   const id = await db.sessions.add({
-    name,
+    name: fallbackName,
     state,
     createdAt: now,
     updatedAt: now
-  });
-  
-  return id as number;
+  }) as number;
+
+  // Generate AI title in the background — don't block session creation
+  const firstUserMessage = state.messages.find(m => m.role === 'user');
+  if (firstUserMessage) {
+    generateSessionTitle(firstUserMessage.content).then(async (title) => {
+      if (title) {
+        await db.sessions.update(id, { name: title });
+      }
+    }).catch(() => {
+      // Keep fallback name on failure
+    });
+  }
+
+  return id;
 }
 
 /**

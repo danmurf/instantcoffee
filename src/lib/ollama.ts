@@ -136,9 +136,9 @@ export async function streamChatWithTools(
   model: string,
   messages: OllamaMessage[],
   tools: OllamaTool[],
-  callbacks: StreamCallbacks
+  callbacks: StreamCallbacks,
+  signal?: AbortSignal
 ): Promise<StreamWithToolsResult> {
-  const abortController = new AbortController();
   let fullResponse = '';
   let toolCalls: ToolCall[] = [];
 
@@ -154,7 +154,7 @@ export async function streamChatWithTools(
         tools,
         stream: true,
       }),
-      signal: abortController.signal,
+      signal,
     });
 
     if (!response.ok) {
@@ -185,21 +185,21 @@ export async function streamChatWithTools(
       for (const line of lines) {
         try {
           const data = JSON.parse(line);
-          
+
           // Extract content
           const content = data.message?.content;
           if (content) {
             fullResponse += content;
             callbacks.onChunk(content);
           }
-          
+
           // Extract tool calls
           if (data.message?.tool_calls && Array.isArray(data.message.tool_calls)) {
             for (const tc of data.message.tool_calls) {
               toolCalls.push({
                 name: tc.function?.name || '',
-                arguments: typeof tc.function?.arguments === 'string' 
-                  ? tc.function.arguments 
+                arguments: typeof tc.function?.arguments === 'string'
+                  ? tc.function.arguments
                   : JSON.stringify(tc.function?.arguments || {}),
               });
             }
@@ -218,12 +218,43 @@ export async function streamChatWithTools(
     return { content: fullResponse, toolCalls };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      const timeoutError = new Error('Request timed out');
-      callbacks.onError(timeoutError);
-      throw timeoutError;
+      throw error;
     }
     callbacks.onError(error instanceof Error ? error : new Error(String(error)));
     throw error;
+  }
+}
+
+/**
+ * Generate a short title for a session based on the user's initial prompt.
+ * Uses a non-streaming Ollama call to produce a concise name (5 words or fewer).
+ */
+export async function generateSessionTitle(userMessage: string): Promise<string> {
+  try {
+    const response = await fetch(`${OLLAMA_BASE}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: DEFAULT_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'Generate a short title (5 words max) for a diagram chat session based on the user\'s first message. Reply with ONLY the title, no quotes or punctuation.',
+          },
+          { role: 'user', content: userMessage },
+        ],
+        stream: false,
+      }),
+    });
+
+    if (!response.ok) return '';
+
+    const data = await response.json();
+    const title = data.message?.content?.trim() || '';
+    // Enforce max length
+    return title.length > 60 ? title.substring(0, 60) : title;
+  } catch {
+    return '';
   }
 }
 
