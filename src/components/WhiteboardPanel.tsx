@@ -124,8 +124,9 @@ export function WhiteboardPanel({
 
   const handleExportPng = useCallback(() => {
     if (svg) {
-      exportPng(svg, 'diagram.png');
-      setShowExportDropdown(false);
+      exportPng(svg, 'diagram.png').then(() => {
+        setShowExportDropdown(false);
+      });
     }
   }, [svg]);
 
@@ -218,7 +219,7 @@ export function WhiteboardPanel({
       // Strip existing width/height attrs (including "100%") and max-width from style
       let cleaned = attrs
         .replace(/\b(width|height)\s*=\s*"[^"]*"/g, '')
-        .replace(/style="[^"]*"/, (styleAttr) =>
+        .replace(/style="[^"]*"/, (styleAttr: string) =>
           styleAttr.replace(/max-width:\s*[^;"]+(;?\s*)/g, '')
         )
         .replace(/\s{2,}/g, ' ');
