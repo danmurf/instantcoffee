@@ -22,7 +22,6 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
-.planning
 .opencode
 .gemini
 .claude
