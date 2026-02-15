@@ -58,7 +58,7 @@ const DEMO_MERMAID = `flowchart TD
 
 function App() {
   const chat = useChat();
-  const { sessions, isLoading: isLoadingSessions } = useSessions();
+  const { sessions } = useSessions();
   const { currentSessionId, hasUnsavedChanges, setCurrentSessionId, setHasUnsavedChanges } = useSessionStore();
   
   const [svg, setSvg] = useState<string>('');
