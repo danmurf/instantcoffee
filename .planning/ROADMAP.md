@@ -2,7 +2,7 @@
 
 **Project:** Instant Coffee  
 **Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning D2 syntax.  
-**Phase Count:** 5
+**Phase Count:** 6
 **Depth:** Quick (3-5 phases)  
 **Coverage:** 26/26 v1 requirements mapped ✓
 
@@ -155,6 +155,17 @@ Plans:
 - [ ] 05-02-PLAN.md — Semantic memory storage and UI
 - [ ] 05-03-PLAN.md — Memory integration into AI prompts
 
+## Phase 6: Use LLM Tool Calling for Diagram Updates
+
+**Goal:** Use LLM tool calling to update the Mermaid diagram, enabling the LLM to respond with comments as well as update the diagram. If the user wants to ask a question without updating the diagram, nothing will change.
+
+**Depends on:** Phase 5
+
+**Status:** Planned (1 plan)
+
+**Plans:**
+- [x] 06-01-PLAN.md — Implement tool calling capability
+
 ---
 
 ## Progress Table
@@ -166,6 +177,7 @@ Plans:
 | 3 | Editing & Polish | 8 | ✓ Complete |
 | 4 | Switch from D2 to Mermaid | N/A (infra) | ✓ Complete |
 | 5 | Persistence & Semantic Memory | 5 | Planned (3 plans) |
+| 6 | Use LLM Tool Calling for Diagram Updates | TBD | Planned (1 plan) |
 
 ---
 
@@ -182,6 +194,15 @@ Plans:
 | UI/UX | UI-01, UI-02, UI-03 | 1, 2 |
 
 **Total:** 26/26 requirements mapped ✓
+
+### Phase 1: Use LLM tool calling for diagram updates
+
+**Goal:** [To be planned]
+**Depends on:** Phase 0
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 1 to break down)
 
 ---
 
