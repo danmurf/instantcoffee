@@ -12,46 +12,64 @@ Users can instantly create accurate diagrams by describing what they want in nat
 
 ### Validated
 
-(None yet — ship to validate)
+- ✅ CORE-01: User can type natural language in chat to request diagrams — v1.0
+- ✅ CORE-02: System sends chat to Ollama and receives Mermaid syntax response — v1.0
+- ✅ CORE-03: System renders Mermaid as SVG in the whiteboard area — v1.0
+- ✅ CORE-04: Diagram updates in real-time as AI generates response — v1.0
+- ✅ CORE-05: System handles Ollama unavailability gracefully with clear error message — v1.0
+- ✅ DIAG-01 through DIAG-04: All diagram types supported — v1.0
+- ✅ ITER-01, ITER-02: Iterative refinement supported — v1.0
+- ✅ EDIT-01, EDIT-02: Manual source editing with live preview — v1.0
+- ✅ NAV-01, NAV-02: Zoom and pan controls — v1.0
+- ✅ EDIT-03, EDIT-04: Undo and redo — v1.0
+- ✅ SAVE-01, SAVE-02: SVG and PNG export — v1.0
+- ✅ SAVE-03, SAVE-04: Session save and load — v1.0
+- ✅ MEMO-01, MEMO-02, MEMO-03: Semantic memory system — v1.0
+- ✅ UI-01, UI-02, UI-03: Modern SaaS aesthetic, local browser setup, loading states — v1.0
 
 ### Active
 
-- [ ] Real-time Mermaid diagram generation from chat messages
-- [ ] Interactive whiteboard display with live diagram rendering
-- [ ] Support for multiple diagram types (sequence diagrams, ERDs, architecture diagrams)
-- [ ] Iterative refinement through conversational updates
-- [ ] Local execution using Ollama for AI capabilities
-- [ ] Client-side Mermaid rendering in browser
-- [ ] Session save/restore functionality
-- [ ] Semantic memory system for remembering system details (services, teams, etc.)
+(Next milestone to be defined)
 
 ### Out of Scope
 
-- [Cloud deployment] — Local POC first, cloud optional future enhancement
-- [Mobile app] — Web-based only for v1
-- [Real-time multi-user collaboration] — Single user session for v1
-- [Voice input] — Text-only for v1 (mentioned as future feature)
+- Real-time multi-user collaboration — Contradicts local-first principle
+- Cloud deployment — Local POC first
+- Mobile app — Web-only for v1
+- Voice input — Text-only for v1
 
 ## Context
 
-- **Mermaid.js Reference:** https://mermaid.js.org/ — client-side diagram rendering
-- **Ollama:** Local LLM execution for privacy and offline capability
-- **Initial Scope:** Local-first POC to validate the core interaction model
+**Current State (v1.0):**
+- **Tech Stack:** React 18.x + Vite 6.x + TypeScript 5.x + Tailwind CSS
+- **Diagram Engine:** Mermaid.js (client-side rendering)
+- **AI:** Ollama with streaming support
+- **Storage:** Dexie.js (IndexedDB)
+- **State Management:** Zustand
+- **Lines of Code:** ~3,372 TypeScript/React
+
+**Milestone v1.0 shipped:**
+- 6 phases, 16 plans, 2 days (2026-02-14 to 2026-02-15)
+- All 26 v1 requirements validated
+- D2→Mermaid migration completed
+- Session persistence and semantic memory implemented
+- LLM tool calling enabled
 
 ## Constraints
 
-- **Local Execution**: Everything must run locally — no external APIs, all processing on-device
-- **Browser-based**: User opens in web browser, no installation required beyond initial setup
-- **Modern Design**: Simple, modern, beautiful — like a modern SaaS product
+- **Local Execution**: Everything runs locally — no external APIs
+- **Browser-based**: Opens in web browser, no installation beyond setup
+- **Modern Design**: Clean, modern SaaS aesthetic
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Tech stack: TBD | User has no preference, will pick based on local-first requirements | — Pending |
-| Mermaid for all diagrams | Mermaid provides client-side rendering without CLI dependency | — Phase 4 |
-| Local Ollama for AI | Explicit requirement for local execution | — Pending |
-| Migrated from D2 to Mermaid | Client-side rendering, no CLI dependency, better LLM compatibility | — Phase 4 |
+| Mermaid over D2 | Client-side rendering, no CLI dependency | ✅ Phase 4 |
+| Ollama for AI | Explicit local-first requirement | ✅ v1.0 |
+| Dexie.js for storage | IndexedDB with TypeScript support | ✅ Phase 5 |
+| Zustand for state | Simple, minimal boilerplate | ✅ v1.0 |
 
 ---
-*Last updated: 2026-02-15 after Phase 4 migration to Mermaid*
+
+*Last updated: 2026-02-15 after v1.0 milestone*

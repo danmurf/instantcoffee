@@ -2,19 +2,17 @@
 
 **Project:** Instant Coffee  
 **Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning diagram syntax.  
-**Current Phase:** 05-persistence-semantic-memory  
-**Current Plan:** Complete
+**Current Milestone:** v1.0 MVP — SHIPPED
 
 ---
 
 ## Current Position
 
 | Attribute | Value |
-| -------- | ------- |
-| **Phase** | 05-persistence-semantic-memory |
-| **Plan** | Complete |
-| **Status** | Ready for next phase |
-| **Progress Bar** | [====================] 3/3 plans (100%) |
+| --------- | ------ |
+| **Milestone** | v1.0 MVP |
+| **Status** | ✅ Shipped |
+| **Ship Date** | 2026-02-15 |
 
 ---
 
@@ -23,134 +21,58 @@
 ### Core Value Proposition
 Users can create accurate Mermaid diagrams by describing what they want in natural language—no diagram syntax knowledge required. Combines local AI (Ollama) with client-side Mermaid rendering for privacy-first diagramming.
 
-### Technical Stack (Researched)
-- **Frontend:** React 18.x/19.x + Vite 6.x + TypeScript 5.x
+### Technical Stack
+- **Frontend:** React 18.x + Vite 6.x + TypeScript 5.x
 - **Backend:** None (client-side rendering with Mermaid)
 - **Diagram Engine:** Mermaid.js (client-side)
-- **AI:** Ollama 0.16.x + ollama-js with streaming
-- **Storage:** Dexie.js 4.x (IndexedDB)
+- **AI:** Ollama with streaming support
+- **Storage:** Dexie.js (IndexedDB)
 - **State:** Zustand
-- **Styling:** Tailwind CSS + Framer Motion
-
-### Key Risks Identified
-1. **LLM output validation** — AI-generated Mermaid may be invalid; need validation pipeline
-2. **Blocking UI** — Local LLMs take 5-30s; must use streaming
-3. **Conversation context** — Each message must include history + current Mermaid source
-4. **Onboarding friction** — Requires Ollama installed locally (Mermaid is bundled)
+- **Styling:** Tailwind CSS
 
 ---
 
-## Phase Breakdown
+## v1.0 Milestone Summary
 
-### Phase 1: Foundation & Rendering Pipeline
-- **Goal:** Users can view app and see D2 diagrams rendered
-- **Requirements:** CORE-01, CORE-03, UI-01, UI-02 (4)
-- **Success Criteria:** 4 observable behaviors
-- **Plans:** 01-01 (done), 01-02 (done), 01-03 (done) ✓ COMPLETE
+| Metric | Value |
+|--------|-------|
+| Phases | 6 |
+| Plans | 16 |
+| Duration | 2 days |
+| Git Range | 32ce024 → HEAD |
+| Files Changed | 86 |
+| LOC | 3,372 |
 
-### Phase 2: Core Chat-to-Diagram Loop
+### Phase Breakdown
 
-- **Goal:** Users can create diagrams through conversation
-- **Requirements:** CORE-02, CORE-04, CORE-05, DIAG-01 through DIAG-04, ITER-01, ITER-02, UI-03 (10)
-- **Success Criteria:** 6 observable behaviors
-- **Plans:** 02-01 (done) ✓, 02-02 (done) ✓, 02-03 (done) ✓, 02-04 (done) ✓ COMPLETE
-
-### Phase 3: Editing & Polish
-- **Goal:** Users can manually edit and export diagrams
-- **Requirements:** EDIT-01, EDIT-02, NAV-01, NAV-02, EDIT-03, EDIT-04, SAVE-01, SAVE-02 (8)
-- **Success Criteria:** 8 observable behaviors
-- **Plans:** 03-01 (done) ✓, 03-02 (done) ✓, 03-03 (done) ✓ COMPLETE
-
-### Phase 4: Switch from D2 to Mermaid
-- **Goal:** Replace D2 CLI with Mermaid.js for client-side rendering
-- **Requirements:** N/A (infrastructure)
-- **Success Criteria:** Client-side rendering, no Express backend, no D2 CLI dependency
-- **Plans:** 04-01 (done) ✓, 04-02 (done) ✓ COMPLETE
-
-### Phase 5: Persistence & Semantic Memory
-- **Goal:** Users can save work and teach system about infrastructure
-- **Requirements:** SAVE-03, SAVE-04, MEMO-01, MEMO-02, MEMO-03 (5)
-- **Success Criteria:** 5 observable behaviors
-- **Plans:** 05-01 (done) ✓, 05-02 (done) ✓, 05-03 (done) ✓ COMPLETE
-
-### Phase 6: LLM Tool Calling for Diagram Updates
-- **Goal:** Enable LLM to update diagrams via tool calling
-- **Requirements:** Tool calling for intelligent diagram updates
-- **Success Criteria:** LLM can use update_diagram tool
-- **Plans:** 06-01 (done) ✓ COMPLETE
+| Phase | Name | Plans | Status |
+|-------|------|-------|--------|
+| 1 | Foundation & Rendering Pipeline | 3 | ✅ Complete |
+| 2 | Core Chat-to-Diagram Loop | 4 | ✅ Complete |
+| 3 | Editing & Polish | 3 | ✅ Complete |
+| 4 | Switch from D2 to Mermaid | 2 | ✅ Complete |
+| 5 | Persistence & Semantic Memory | 3 | ✅ Complete |
+| 6 | LLM Tool Calling | 1 | ✅ Complete |
 
 ---
 
-## Accumulated Context
+## Key Accomplishments
 
-### Decisions Made
-- **4-phase structure** derived from 26 v1 requirements (depth: quick)
-- **Phase ordering:** Foundation → AI → Editing → Mermaid → Persistence
-- **Dependencies respected:** Each phase builds on previous
-- **Phase 1-01:** Vite 6.x + React 18.x + Express 4.x + Tailwind CSS
-- **Phase 1-02:** Indigo accent color, md breakpoint for responsive layout
-- **Phase 2-01:** Ollama client with native fetch/ReadableStream (no external deps), llama3.2 model default
-- **Phase 2-03:** Streaming with 500ms debounce, refs for stale closure avoidance
-- **Phase 2-04:** Enhanced system prompt with explicit iterative refinement instructions
-- **Phase 3-01:** Source editor modal with split-view layout, 300ms debounced live preview
-- **Phase 3-02:** Zoom/pan with CSS transform, 10% zoom steps, history with redo truncation
-- **Phase 3-03:** Export dropdown with SVG/PNG download using Blob pattern
-- **Phase 4:** Migrated from D2 to Mermaid for client-side rendering
-- **Phase 4:** Removed Express backend entirely
-- **Phase 4:** Updated system prompt to generate Mermaid instead of D2
-- **Phase 5:** Implemented session persistence with Dexie.js and semantic memory with natural language commands
-- **Phase 5:** Added collapsible sidebar with session list, auto-save with 1500ms debounce
-- **Phase 5:** Added memory panel with CRUD and chat-based remember/forget/update commands
-- **Phase 5:** Injected all memories into system prompts for AI context
-
-### Roadmap Evolution
-- Phase 6 added: Use LLM tool calling for diagram updates
-- Phase 5 added: Switch from D2 to Mermaid
-- Phases 4 & 5 swapped: Mermaid switch moved to Phase 4, Persistence moved to Phase 5
-
-### Phase 5: Persistence & Semantic Memory (Current)
-- **05-01:** Session persistence foundation (Dexie, Zustand, auto-save) ✓ COMPLETE
-- **05-02:** Memory storage and panel UI ✓ COMPLETE
-- **05-03:** Integration - sidebar, memory injection, chat commands ✓ COMPLETE
-
-### Research Flags (for planning phases)
-- **Phase 2:** Prompt engineering for Mermaid generation needs iteration
-- **Phase 5 (deferred):** Custom shapes, layout engines need research
-
-### Todos
-- [x] Plan Phase 1 (Foundation & Rendering Pipeline)
-- [x] Execute 01-01-PLAN.md
-- [x] Execute 01-02-PLAN.md (Chat panel and layout)
-- [x] Execute 01-03-PLAN.md (D2 rendering pipeline)
-- [x] Execute 02-01-PLAN.md (Ollama client and types)
-- [x] Execute 02-02-PLAN.md (useChat hook)
-- [x] Execute 02-03-PLAN.md (Streaming updates)
-- [x] Execute 02-04-PLAN.md (Iterative refinement)
-- [x] Plan Phase 3 (Editing & Polish)
-- [x] Execute 03-01-PLAN.md (Source Editor Modal)
-- [x] Execute 03-02-PLAN.md (Zoom/Pan Navigation + Undo/Redo)
-- [x] Execute 03-03-PLAN.md (SVG/PNG Export)
-- [x] Plan Phase 4 (Switch from D2 to Mermaid)
-- [x] Execute 04-01-PLAN.md (Core rendering swap)
-- [x] Execute 04-02-PLAN.md (UI updates, backend removal, config cleanup)
-- [x] Plan Phase 5 (Persistence & Semantic Memory)
-- [x] Execute 05-01-PLAN.md (Session persistence foundation)
-- [x] Execute 05-02-PLAN.md (Memory storage and panel)
-- [x] Execute 05-03-PLAN.md (Integration - sidebar, memory injection)
-- [ ] Plan Phase 6 (LLM Tool Calling for Diagram Updates)
-- [ ] Execute Phase 6
-
-### Blockers
-- None - Mermaid provides client-side rendering without external dependencies
+1. **Real-time diagram generation** — Users can chat with Ollama to generate Mermaid diagrams
+2. **Iterative refinement** — AI maintains context and can modify existing diagrams
+3. **Client-side rendering** — No CLI needed, runs entirely in browser
+4. **Export capabilities** — SVG and PNG export with one click
+5. **Session persistence** — Save and resume work across browser sessions
+6. **Semantic memory** — Teach the AI about your infrastructure
 
 ---
 
-## Session Continuity
+## Next Steps
 
-**Last Updated:** 2026-02-15  
-**Phase Status:** Phase 5 complete (3 of 3 plans executed)  
-**Next Step:** Plan Phase 6 (LLM Tool Calling for Diagram Updates) or execute remaining plans
+See `.planning/PROJECT.md` for current project state.
+
+**Next Milestone:** Not yet defined. Run `/gsd-new to start planning.
 
 ---
 
-*State maintained for project continuity*
+*Last-milestone` updated: 2026-02-15 (v1.0 shipped)*
