@@ -5,6 +5,9 @@ import { WhiteboardPanel } from './components/WhiteboardPanel';
 import { SourceEditorModal } from './components/SourceEditorModal';
 import { renderMermaid, initMermaid } from './lib/mermaid';
 import { useChat } from './hooks/useChat';
+import { useAutoSave } from './hooks/useAutoSave';
+import { useSessionStore } from './stores/sessionStore';
+import type { SessionState } from './types/session';
 
 initMermaid();
 
@@ -52,6 +55,7 @@ const DEMO_MERMAID = `flowchart TD
 
 function App() {
   const chat = useChat();
+  const { currentSessionId, hasUnsavedChanges, setCurrentSessionId, setHasUnsavedChanges } = useSessionStore();
   
   const [svg, setSvg] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -64,6 +68,20 @@ function App() {
 
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
+
+  // Build session state from current app state
+  const sessionState: SessionState = {
+    messages: chat.messages,
+    mermaidSource,
+    history,
+    historyIndex,
+  };
+
+  // Auto-save hook
+  const { flushSave } = useAutoSave({
+    sessionState,
+    enabled: true,
+  });
 
   useEffect(() => {
     if (chat.currentSvg) {
@@ -170,6 +188,54 @@ function App() {
       setIsLoading(false);
     }
   };
+
+  // Load session state - restores app from saved session
+  const loadSessionState = useCallback(async (state: SessionState) => {
+    // Set messages
+    chat.setMessages(state.messages);
+    
+    // Set diagram source
+    if (state.mermaidSource) {
+      setMermaidSource(state.mermaidSource);
+      setHistory(state.history);
+      setHistoryIndex(state.historyIndex);
+      
+      try {
+        const renderedSvg = await renderMermaid(state.mermaidSource);
+        setSvg(renderedSvg);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to render diagram');
+      }
+    }
+    
+    setHasUnsavedChanges(false);
+  }, [chat]);
+
+  // Handle new session - saves current and starts fresh
+  const handleNewSession = useCallback(async () => {
+    // Flush any pending saves
+    await flushSave();
+    
+    // Reset all state
+    chat.setMessages([]);
+    setMermaidSource(DEMO_MERMAID);
+    setHistory([DEMO_MERMAID]);
+    setHistoryIndex(0);
+    setSvg('');
+    setError(null);
+    
+    // Reset session store
+    setCurrentSessionId(null);
+    setHasUnsavedChanges(false);
+    
+    // Render demo
+    try {
+      const renderedSvg = await renderMermaid(DEMO_MERMAID);
+      setSvg(renderedSvg);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to render demo');
+    }
+  }, [chat, flushSave, setCurrentSessionId, setHasUnsavedChanges]);
 
   return (
     <>

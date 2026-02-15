@@ -246,6 +246,7 @@ export function useChat() {
     error,
     sendMessage,
     isDiagramUpdating,
+    setMessages,
     streamingContent: _streamingContent,
     partialMermaid: _partialMermaid,
   };
