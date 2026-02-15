@@ -4,12 +4,14 @@ interface LayoutProps {
   leftPanel: ReactNode;
   rightPanel: ReactNode;
   leftPanelDefaultWidth?: number;
+  sidebar?: ReactNode;
 }
 
 export function Layout({ 
   leftPanel, 
   rightPanel, 
-  leftPanelDefaultWidth = 33 
+  leftPanelDefaultWidth = 33,
+  sidebar,
 }: LayoutProps) {
   const [leftWidth, setLeftWidth] = useState(leftPanelDefaultWidth);
   const [isDragging, setIsDragging] = useState(false);
@@ -50,6 +52,9 @@ export function Layout({
       ref={containerRef}
       className="flex h-screen w-full bg-white"
     >
+      {/* Sidebar */}
+      {sidebar}
+
       {/* Mobile: Stack vertically */}
       <div className="flex w-full flex-col md:hidden">
         <div className="h-1/2 overflow-hidden border-b border-gray-200">

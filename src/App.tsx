@@ -3,10 +3,13 @@ import { Layout } from './components/Layout';
 import { ChatPanel } from './components/ChatPanel';
 import { WhiteboardPanel } from './components/WhiteboardPanel';
 import { SourceEditorModal } from './components/SourceEditorModal';
+import { SessionSidebar } from './components/SessionSidebar';
 import { renderMermaid, initMermaid } from './lib/mermaid';
 import { useChat } from './hooks/useChat';
 import { useAutoSave } from './hooks/useAutoSave';
+import { useSessions } from './hooks/useSessions';
 import { useSessionStore } from './stores/sessionStore';
+import { loadSession, deleteSession } from './db/sessions';
 import type { SessionState } from './types/session';
 
 initMermaid();
@@ -55,6 +58,7 @@ const DEMO_MERMAID = `flowchart TD
 
 function App() {
   const chat = useChat();
+  const { sessions, isLoading: isLoadingSessions } = useSessions();
   const { currentSessionId, hasUnsavedChanges, setCurrentSessionId, setHasUnsavedChanges } = useSessionStore();
   
   const [svg, setSvg] = useState<string>('');
@@ -62,6 +66,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [mermaidSource, setMermaidSource] = useState<string>(DEMO_MERMAID);
   const [showEditor, setShowEditor] = useState<boolean>(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
 
   const [history, setHistory] = useState<string[]>([DEMO_MERMAID]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
@@ -209,7 +214,35 @@ function App() {
     }
     
     setHasUnsavedChanges(false);
-  }, [chat]);
+  }, [chat, setHasUnsavedChanges]);
+
+  // Handle session selection
+  const handleSelectSession = useCallback(async (sessionId: number) => {
+    // Check for unsaved changes
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm('You have unsaved changes. Switch session anyway?');
+      if (!confirmed) return;
+    }
+    
+    // Flush any pending saves
+    await flushSave();
+    
+    // Load the session
+    const session = await loadSession(sessionId);
+    if (session) {
+      await loadSessionState(session.state);
+      setCurrentSessionId(sessionId);
+    }
+  }, [hasUnsavedChanges, flushSave, loadSessionState, setCurrentSessionId]);
+
+  // Handle session deletion
+  const handleDeleteSession = useCallback(async (sessionId: number) => {
+    await deleteSession(sessionId);
+    // If we deleted the current session, reset to new session
+    if (currentSessionId === sessionId) {
+      await handleNewSession();
+    }
+  }, [currentSessionId]);
 
   // Handle new session - saves current and starts fresh
   const handleNewSession = useCallback(async () => {
@@ -240,6 +273,18 @@ function App() {
   return (
     <>
       <Layout
+        sidebar={
+          <SessionSidebar
+            sessions={sessions ?? []}
+            currentSessionId={currentSessionId}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onSelectSession={handleSelectSession}
+            onNewSession={handleNewSession}
+            onDeleteSession={handleDeleteSession}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
+        }
         leftPanel={
           <ChatPanel 
             messages={chat.messages}

@@ -8,6 +8,9 @@ import { useState, useCallback, useRef } from 'react';
 import type { ChatMessage, MessageRole, OllamaMessage, OllamaTool, StreamCallbacks, ToolCall } from '../types/chat';
 import { streamChatWithTools, extractMermaidCode, formatError, DEFAULT_MODEL } from '../lib/ollama';
 import { renderMermaid } from '../lib/mermaid';
+import { getAllMemoriesForPrompt, createMemory, updateMemory, deleteMemory } from '../db/memories';
+import { db } from '../db';
+import { parseMemoryCommand } from './useMemories';
 
 const MAX_MESSAGES = 20;
 const STREAM_DEBOUNCE_MS = 500;
@@ -85,8 +88,14 @@ export function useChat() {
   const lastRenderTimeRef = useRef<number>(0);
   const partialMermaidRef = useRef<string>('');
 
-  const toOllamaMessages = useCallback((history: ChatMessage[], userContent: string): OllamaMessage[] => {
+  const toOllamaMessages = useCallback(async (history: ChatMessage[], userContent: string): Promise<OllamaMessage[]> => {
     let systemContent = SYSTEM_PROMPT;
+
+    // Inject memories into system prompt
+    const memoryContext = await getAllMemoriesForPrompt();
+    if (memoryContext) {
+      systemContent += `\n\nUSER'S CONTEXT (use this knowledge when generating diagrams):\n${memoryContext}`;
+    }
 
     if (currentMermaid) {
       systemContent += `\n\nCURRENT DIAGRAM:\n\`\`\`mermaid\n${currentMermaid}\n\`\`\``;
@@ -129,7 +138,51 @@ export function useChat() {
     lastRenderTimeRef.current = 0;
 
     try {
-      const apiMessages = toOllamaMessages(messages, trimmedContent);
+      // Check for memory commands first
+      const memoryCmd = parseMemoryCommand(trimmedContent);
+      
+      if (memoryCmd) {
+        // Handle memory commands without calling Ollama
+        if (memoryCmd.action === 'remember') {
+          await createMemory('general', memoryCmd.name, memoryCmd.content);
+          const assistantMessage = createMessage('assistant', `Got it! I'll remember that ${memoryCmd.name} ${memoryCmd.content}.`);
+          setMessages(prev => [...prev, assistantMessage]);
+          setIsGenerating(false);
+          return;
+        }
+        
+        if (memoryCmd.action === 'forget') {
+          // Find memory by name (case-insensitive)
+          const existingMemory = await db.memories.where('name').equalsIgnoreCase(memoryCmd.name).first();
+          if (existingMemory) {
+            await deleteMemory(existingMemory.id!);
+            const assistantMessage = createMessage('assistant', `Done, I've forgotten about ${memoryCmd.name}.`);
+            setMessages(prev => [...prev, assistantMessage]);
+          } else {
+            const assistantMessage = createMessage('assistant', `I don't have any memory about ${memoryCmd.name}.`);
+            setMessages(prev => [...prev, assistantMessage]);
+          }
+          setIsGenerating(false);
+          return;
+        }
+        
+        if (memoryCmd.action === 'update') {
+          const existingMemory = await db.memories.where('name').equalsIgnoreCase(memoryCmd.name).first();
+          if (existingMemory) {
+            await updateMemory(existingMemory.id!, { content: memoryCmd.content });
+            const assistantMessage = createMessage('assistant', `Updated! ${memoryCmd.name} — ${memoryCmd.content}.`);
+            setMessages(prev => [...prev, assistantMessage]);
+          } else {
+            await createMemory('general', memoryCmd.name, memoryCmd.content);
+            const assistantMessage = createMessage('assistant', `I didn't have a memory for ${memoryCmd.name}, so I've created one: ${memoryCmd.content}.`);
+            setMessages(prev => [...prev, assistantMessage]);
+          }
+          setIsGenerating(false);
+          return;
+        }
+      }
+
+      const apiMessages = await toOllamaMessages(messages, trimmedContent);
 
       const callbacks: StreamCallbacks = {
         onChunk: async (chunk: string) => {

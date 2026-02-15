@@ -11,8 +11,8 @@ interface ChatPanelProps {
 const EXAMPLE_PROMPTS = [
   "Create a sequence diagram for user login",
   "Make an ERD for an e-commerce app",
+  "Remember that auth-service is owned by Platform team",
   "Draw a flowchart for order processing",
-  "Show an architecture diagram for a web app"
 ];
 
 export function ChatPanel({ messages, isGenerating, error, onSendMessage }: ChatPanelProps) {
