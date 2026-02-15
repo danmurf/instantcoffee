@@ -87,13 +87,17 @@ export function MemoryConsolidationModal({ isOpen, memoryCount = 0 }: MemoryCons
   if (memoryCount > 30) {
     if (elapsedSeconds < 15) {
       subtitle = `Processing ${memoryCount} memories - this may take 1-2 minutes...`;
-    } else if (elapsedSeconds < 60) {
-      subtitle = `Still working on ${memoryCount} memories... (${elapsedSeconds}s)`;
+    } else if (elapsedSeconds < 45) {
+      subtitle = `Still tidying up ${memoryCount} memories... hang tight!`;
+    } else if (elapsedSeconds < 90) {
+      subtitle = `Good things take time! Almost there... ☕`;
     } else {
-      subtitle = `Almost there... (${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s)`;
+      subtitle = `Worth the wait! Just a bit longer... (${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s)`;
     }
-  } else if (elapsedSeconds > 30) {
-    subtitle = `This is taking longer than expected... (${elapsedSeconds}s)`;
+  } else if (elapsedSeconds > 20 && elapsedSeconds < 45) {
+    subtitle = `Hang in there! Quality cleaning takes time... ✨`;
+  } else if (elapsedSeconds >= 45) {
+    subtitle = `Still polishing... patience is a virtue! (${elapsedSeconds}s)`;
   }
 
   return (
