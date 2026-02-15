@@ -2,7 +2,7 @@
 
 **Project:** Instant Coffee  
 **Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning D2 syntax.  
-**Phase Count:** 4  
+**Phase Count:** 5
 **Depth:** Quick (3-5 phases)  
 **Coverage:** 26/26 v1 requirements mapped ✓
 
@@ -15,7 +15,8 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 **Dependencies:**
 - Phase 1 → Phase 2 (rendering required before AI can generate diagrams)
 - Phase 2 → Phase 3 (need diagrams to edit and export)
-- Phase 3 → Phase 4 (need diagrams to save and enhance with memory)
+- Phase 3 → Phase 4 (switch rendering engine from D2 to Mermaid)
+- Phase 4 → Phase 5 (persistence and semantic memory build on stable rendering)
 
 ---
 
@@ -112,7 +113,21 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 
 ---
 
-## Phase 4: Persistence & Semantic Memory
+## Phase 4: Switch from D2 to Mermaid
+
+**Goal:** Replace D2 CLI rendering with Mermaid.js for client-side diagram rendering, eliminating the D2 CLI dependency.
+
+**Depends on:** Phase 3
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Core rendering swap (Mermaid lib, code extraction, useChat)
+- [ ] 04-02-PLAN.md — UI updates, backend removal, config cleanup
+
+---
+
+## Phase 5: Persistence & Semantic Memory
 
 **Goal:** Users can save their work and teach the system about their infrastructure.
 
@@ -134,9 +149,9 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 **Status:** Planned (3 plans)
 
 **Plans:**
-- [ ] 04-01-PLAN.md — Session persistence (save/load using Dexie.js)
-- [ ] 04-02-PLAN.md — Semantic memory storage and UI
-- [ ] 04-03-PLAN.md — Memory integration into AI prompts
+- [ ] 05-01-PLAN.md — Session persistence (save/load using Dexie.js)
+- [ ] 05-02-PLAN.md — Semantic memory storage and UI
+- [ ] 05-03-PLAN.md — Memory integration into AI prompts
 
 ---
 
@@ -147,7 +162,8 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 | 1 | Foundation & Rendering Pipeline | 4 | ✓ Complete |
 | 2 | Core Chat-to-Diagram Loop | 10 | ✓ Complete |
 | 3 | Editing & Polish | 8 | ✓ Complete |
-| 4 | Persistence & Semantic Memory | 5 | Planned (3 plans) |
+| 4 | Switch from D2 to Mermaid | N/A (infra) | Planned (2 plans) |
+| 5 | Persistence & Semantic Memory | 5 | Planned (3 plans) |
 
 ---
 
@@ -159,8 +175,8 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 | Diagram Types | DIAG-01, DIAG-02, DIAG-03, DIAG-04 | 2 |
 | Iteration & Editing | ITER-01, ITER-02, EDIT-01, EDIT-02 | 2, 3 |
 | Navigation & Controls | NAV-01, NAV-02, EDIT-03, EDIT-04 | 3 |
-| Export & Save | SAVE-01, SAVE-02, SAVE-03, SAVE-04 | 3, 4 |
-| Semantic Memory | MEMO-01, MEMO-02, MEMO-03 | 4 |
+| Export & Save | SAVE-01, SAVE-02, SAVE-03, SAVE-04 | 3, 5 |
+| Semantic Memory | MEMO-01, MEMO-02, MEMO-03 | 5 |
 | UI/UX | UI-01, UI-02, UI-03 | 1, 2 |
 
 **Total:** 26/26 requirements mapped ✓

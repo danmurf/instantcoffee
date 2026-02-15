@@ -60,9 +60,14 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 - **Success Criteria:** 8 observable behaviors
 - **Plans:** 03-01 (done) ✓, 03-02 (done) ✓, 03-03 (done) ✓ COMPLETE
 
-### Phase 4: Persistence & Semantic Memory
+### Phase 4: Switch from D2 to Mermaid
+- **Goal:** Replace D2 CLI with Mermaid.js for client-side rendering
+- **Requirements:** TBD
+- **Success Criteria:** TBD
+
+### Phase 5: Persistence & Semantic Memory
 - **Goal:** Users can save work and teach system about infrastructure
-- **Requirements:** SAVE-03, SAVE-04, MEMO-01, MEMO-02, MEMO-03 (4)
+- **Requirements:** SAVE-03, SAVE-04, MEMO-01, MEMO-02, MEMO-03 (5)
 - **Success Criteria:** 5 observable behaviors
 
 ---
@@ -83,6 +88,10 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 - **Phase 3-03:** Export dropdown with SVG/PNG download using Blob pattern
 - **Phase 3-03:** Export dropdown with SVG/PNG download using Blob pattern
 
+### Roadmap Evolution
+- Phase 5 added: Switch from D2 to Mermaid
+- Phases 4 & 5 swapped: Mermaid switch moved to Phase 4, Persistence moved to Phase 5
+
 ### Research Flags (for planning phases)
 - **Phase 2:** Prompt engineering for D2 generation needs iteration
 - **Phase 5 (deferred):** Custom shapes, layout engines need D2-specific research
@@ -100,8 +109,10 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 - [x] Execute 03-01-PLAN.md (Source Editor Modal)
 - [x] Execute 03-02-PLAN.md (Zoom/Pan Navigation + Undo/Redo)
 - [x] Execute 03-03-PLAN.md (SVG/PNG Export)
-- [ ] Plan Phase 4
+- [ ] Plan Phase 4 (Switch from D2 to Mermaid)
 - [ ] Execute Phase 4
+- [ ] Plan Phase 5 (Persistence & Semantic Memory)
+- [ ] Execute Phase 5
 
 ### Blockers
 - **D2 CLI:** Not installed on system. User needs to install separately from https://d2lang.com/tour/install
@@ -112,7 +123,7 @@ Users can create accurate D2 diagrams by describing what they want in natural la
 
 **Last Updated:** 2026-02-14  
 **Phase Status:** Phase 3 complete (3 of 3 plans executed)  
-**Next Step:** Plan Phase 4 (Persistence & Semantic Memory)
+**Next Step:** Plan Phase 4 (Switch from D2 to Mermaid)
 
 ---
 
