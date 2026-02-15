@@ -9,11 +9,15 @@ import { useChat } from './hooks/useChat';
 initMermaid();
 
 const DEMO_MERMAID = `flowchart TD
-    A[Hello] -->|says hello| B[World]
-    B --> C[Hello, World!]
+    A[💡 Enter your idea] --> B[✨ See your diagram]
+    B --> C[❓ Ask questions]
+    B --> D[🔄 Request changes]
+    C --> B
+    D --> B
     style A fill:#f0f9ff,stroke:#6366f1
     style B fill:#f0f9ff,stroke:#6366f1
     style C fill:#f0f9ff,stroke:#6366f1
+    style D fill:#f0f9ff,stroke:#6366f1
 `;
 
 function App() {

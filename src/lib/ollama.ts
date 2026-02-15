@@ -252,33 +252,6 @@ export function extractMermaidCode(
 }
 
 /**
- * Extract D2 code from an AI response
- * Looks for markdown code blocks with 'd2' language identifier
- * @param response - Full AI response text
- * @returns Object with explanation and extracted D2 code
- */
-export function extractD2Code(
-  response: string
-): { explanation: string; d2Code: string } {
-  // Try to match d2 code block
-  const d2BlockMatch = response.match(/```d2\n([\s\S]*?)```/);
-
-  if (d2BlockMatch) {
-    const d2Code = d2BlockMatch[1];
-    const explanation = response.replace(d2BlockMatch[0], '').trim();
-    return { explanation, d2Code };
-  }
-
-  // Fallback: check if response looks like D2 (has : and [ characters)
-  if (response.includes(':') && response.includes('[')) {
-    return { explanation: '', d2Code: response };
-  }
-
-  // No D2 found
-  return { explanation: response, d2Code: '' };
-}
-
-/**
  * Format errors into user-friendly messages
  * @param error - Error object or unknown
  * @returns Formatted error message string
