@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { ChatMessage } from '../types/chat';
 import { LoadingAnimation } from './LoadingAnimation';
+import { MessageContent } from './MessageContent';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -118,7 +119,10 @@ export function ChatPanel({ messages, isGenerating, error, onSendMessage }: Chat
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap text-sm">{message.content}</p>
+                  <MessageContent
+                    content={message.content}
+                    isUser={message.role === 'user'}
+                  />
                 </div>
               </div>
             ))}
