@@ -21,6 +21,12 @@ export async function renderMermaid(source: string): Promise<string> {
   const id = `mermaid-${++renderCounter}`;
   
   try {
+    await mermaid.parse(source);
+  } catch (parseErr) {
+    throw new Error(`Invalid Mermaid syntax: ${parseErr instanceof Error ? parseErr.message : 'Parse error'}`);
+  }
+  
+  try {
     const { svg } = await mermaid.render(id, source);
     return svg;
   } catch (err) {
