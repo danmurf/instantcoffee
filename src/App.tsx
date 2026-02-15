@@ -158,7 +158,7 @@ function App() {
             </button>
             <WhiteboardPanel 
               svg={svg} 
-              isLoading={isLoading || chat.isGenerating}
+              isLoading={isLoading || chat.isDiagramUpdating}
               error={error}
               onUndo={handleUndo}
               onRedo={handleRedo}

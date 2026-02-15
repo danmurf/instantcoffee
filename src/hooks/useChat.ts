@@ -34,45 +34,32 @@ export const diagramTool: OllamaTool = {
   },
 };
 
-const SYSTEM_PROMPT = `You are a Mermaid diagram generation assistant. Your role is to help users create diagrams by generating Mermaid code based on their descriptions.
+const SYSTEM_PROMPT = `You are a helpful assistant that can create and modify Mermaid diagrams on a whiteboard.
 
-You can generate the following types of diagrams:
-- Sequence diagrams (showing interactions between actors/components)
-- ERD (Entity-Relationship Diagrams)
-- Flowcharts (process flows, decision trees)
-- Architecture diagrams (system components, data flow)
-- Class diagrams
-- State diagrams
-- Pie charts
+You have an 'update_diagram' tool that updates the whiteboard. Follow these rules strictly:
 
-TOOL USE:
-- Use the 'update_diagram' tool when the user wants to create or modify a Mermaid diagram
-- Do NOT use the tool if the user is just asking a question, making small talk, or not requesting any diagram changes
-- When using the tool, provide the COMPLETE updated diagram code, not just the changes
-- After using the tool, you can provide additional text explanation to the user
+WHEN TO USE THE TOOL:
+- The user explicitly asks to create a new diagram
+- The user asks to change, modify, add to, or remove from the current diagram
+- The user describes something they want visualised
 
-ITERATIVE REFINEMENT:
-When user requests changes to an existing diagram (e.g., 'add a node', 'make it bigger', 'change color to blue', 'move the arrow'), you must MODIFY the CURRENT DIAGRAM below, not create a new one from scratch.
+WHEN NOT TO USE THE TOOL:
+- The user asks a question about the diagram (e.g. "what does this show?", "explain the flow")
+- The user is making conversation, asking for help, or discussing concepts
+- The user hasn't requested any visual change
+- You are unsure whether the user wants a diagram change — just respond with text and ask
 
-Examples of iterative changes:
-- "add a user approval step" → Add new node connected to existing flow
-- "make the arrows thicker" → Add style attribute to connections
-- "change the color of server to red" → Modify node style
-- "add another database" → Add new node and connection
+If in doubt, do NOT call the tool. Just reply in text.
 
-CRITICAL: Always output ONLY the modified Mermaid code. Do NOT explain what changed. The user wants to see the result, not a description of changes.
+TOOL USAGE:
+- Pass raw Mermaid code to the tool — no markdown fences, no \`\`\`mermaid wrapper
+- Always provide the COMPLETE diagram, not just the changed parts
+- When modifying an existing diagram, start from the CURRENT DIAGRAM shown below and apply the requested changes
 
-When generating diagrams:
-1. Use proper Mermaid syntax: https://mermaid.js.org/intro/
-2. Always wrap Mermaid code in markdown code blocks with the 'mermaid' language identifier
-3. Keep diagrams clear and readable
+SUPPORTED DIAGRAM TYPES:
+Sequence, ERD, Flowchart, Architecture, Class, State, Pie chart
 
-Format your response like this:
-\`\`\`mermaid
-# Your Mermaid code here
-\`\`\`
-
-If the user asks to modify an existing diagram, output the complete modified Mermaid code (not just the changes).`;
+Keep diagrams clear and readable. Use proper Mermaid syntax.`;
 
 function createMessage(role: MessageRole, content: string): ChatMessage {
   return {
@@ -148,29 +135,6 @@ export function useChat() {
         onChunk: async (chunk: string) => {
           streamingContentRef.current += chunk;
           setStreamingContent(streamingContentRef.current);
-          
-          // Only extract from text if no tool call happened (fallback behavior)
-          const { mermaidCode } = extractMermaidCode(streamingContentRef.current);
-          
-          if (mermaidCode && mermaidCode !== partialMermaidRef.current) {
-            const now = Date.now();
-            if (now - lastRenderTimeRef.current >= STREAM_DEBOUNCE_MS) {
-              lastRenderTimeRef.current = now;
-              partialMermaidRef.current = mermaidCode;
-              setIsDiagramUpdating(true);
-              setPartialMermaid(mermaidCode);
-              
-              try {
-                const svg = await renderMermaid(mermaidCode);
-                setCurrentMermaid(mermaidCode);
-                setCurrentSvg(svg);
-              } catch (renderErr) {
-                console.warn('Partial Mermaid render failed, keeping previous diagram:', renderErr);
-              } finally {
-                setIsDiagramUpdating(false);
-              }
-            }
-          }
         },
         onComplete: async (fullResponse: string) => {
           streamingContentRef.current = '';
@@ -178,16 +142,13 @@ export function useChat() {
           setStreamingContent('');
           setPartialMermaid('');
           setIsDiagramUpdating(false);
-          
-          const { explanation, mermaidCode } = extractMermaidCode(fullResponse);
-          
-          let assistantContent = explanation || fullResponse;
-          if (!mermaidCode) {
-            assistantContent += '\n\n⚠️ No Mermaid code was detected in my response. Please try describing the diagram differently.';
-          }
 
+          // This only runs for non-tool-call responses (text-only path)
+          const { explanation, mermaidCode } = extractMermaidCode(fullResponse);
+
+          const assistantContent = explanation || fullResponse;
           const assistantMessage = createMessage('assistant', assistantContent);
-          
+
           if (mermaidCode) {
             try {
               const svg = await renderMermaid(mermaidCode);
@@ -196,7 +157,6 @@ export function useChat() {
               assistantMessage.mermaidSource = mermaidCode;
             } catch (renderErr) {
               console.error('Failed to render Mermaid:', renderErr);
-              assistantContent += '\n\n⚠️ Diagram generated but rendering failed.';
             }
           }
 
