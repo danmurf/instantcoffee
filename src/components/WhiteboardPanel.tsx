@@ -23,6 +23,8 @@ export interface WhiteboardPanelProps {
   canUndo?: boolean;
   /** Whether redo is available */
   canRedo?: boolean;
+  /** The Mermaid source code */
+  mermaidSource?: string;
 }
 
 export function WhiteboardPanel({
@@ -32,7 +34,8 @@ export function WhiteboardPanel({
   onUndo,
   onRedo,
   canUndo = false,
-  canRedo = false
+  canRedo = false,
+  mermaidSource
 }: WhiteboardPanelProps) {
   const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
   const [scale, setScale] = useState<number>(1);
@@ -42,6 +45,7 @@ export function WhiteboardPanel({
   const [startPan, setStartPan] = useState<{ x: number; y: number } | null>(null);
   const [initialPan, setInitialPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [showExportDropdown, setShowExportDropdown] = useState<boolean>(false);
+  const [showCopySuccess, setShowCopySuccess] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fitScaleRef = useRef<number>(1);
   // Natural (viewBox) dimensions of the SVG, used to resize on zoom
@@ -129,6 +133,18 @@ export function WhiteboardPanel({
       });
     }
   }, [svg]);
+
+  const handleCopyMermaid = useCallback(() => {
+    if (mermaidSource) {
+      navigator.clipboard.writeText(mermaidSource).then(() => {
+        setShowExportDropdown(false);
+        setShowCopySuccess(true);
+        setTimeout(() => setShowCopySuccess(false), 2000);
+      }).catch((err) => {
+        console.error('Failed to copy to clipboard:', err);
+      });
+    }
+  }, [mermaidSource]);
 
   // Click outside to close dropdown
   useEffect(() => {
@@ -324,7 +340,7 @@ export function WhiteboardPanel({
             
             {/* Dropdown menu */}
             {showExportDropdown && (
-              <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded border border-gray-200 bg-white py-1 shadow-lg">
+              <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded border border-gray-200 bg-white py-1 shadow-lg">
                 <button
                   onClick={handleExportSvg}
                   className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
@@ -337,6 +353,12 @@ export function WhiteboardPanel({
                 >
                   Export as PNG
                 </button>
+                <button
+                  onClick={handleCopyMermaid}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Copy Mermaid Code
+                </button>
               </div>
             )}
           </div>
@@ -346,6 +368,13 @@ export function WhiteboardPanel({
         <div className="absolute bottom-4 left-4 z-10 rounded bg-white px-2 py-1 text-xs text-gray-500 shadow-md">
           {Math.round(scale * 100)}%
         </div>
+
+        {/* Copy success toast */}
+        {showCopySuccess && (
+          <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 transform rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-lg">
+            ✓ Copied to clipboard
+          </div>
+        )}
 
         {/* Diagram container — pan only, zoom is applied to SVG dimensions */}
         <div

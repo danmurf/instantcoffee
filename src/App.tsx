@@ -314,14 +314,15 @@ function App() {
             >
               Edit Source
             </button>
-            <WhiteboardPanel 
-              svg={svg} 
+            <WhiteboardPanel
+              svg={svg}
               isLoading={isLoading || chat.isDiagramUpdating}
               error={error}
               onUndo={handleUndo}
               onRedo={handleRedo}
               canUndo={canUndo}
               canRedo={canRedo}
+              mermaidSource={mermaidSource}
             />
           </div>
         }
