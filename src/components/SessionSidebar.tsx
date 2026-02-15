@@ -10,6 +10,10 @@ interface SessionSidebarProps {
   onDeleteSession: (id: number) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  memoryEnabled: boolean;
+  onMemoryEnabledChange: (enabled: boolean) => void;
+  memorySavingEnabled: boolean;
+  onMemorySavingEnabledChange: (enabled: boolean) => void;
 }
 
 /**
@@ -41,6 +45,10 @@ export function SessionSidebar({
   onDeleteSession,
   isCollapsed,
   onToggleCollapse,
+  memoryEnabled,
+  onMemoryEnabledChange,
+  memorySavingEnabled,
+  onMemorySavingEnabledChange,
 }: SessionSidebarProps) {
   const [showMemories, setShowMemories] = useState(false);
   
@@ -164,8 +172,44 @@ export function SessionSidebar({
           </svg>
         </button>
         
-        {/* Memory panel */}
-        <div className={`${showMemories ? 'max-h-80' : 'max-h-0'} overflow-hidden transition-all duration-200`}>
+        {/* Memory toggles and panel */}
+        <div className={`${showMemories ? 'max-h-[26rem]' : 'max-h-0'} overflow-hidden transition-all duration-200`}>
+          <div className="px-3 py-2 space-y-2 border-b border-gray-700/50">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">Read from memory</span>
+              <button
+                role="switch"
+                aria-checked={memoryEnabled}
+                onClick={() => onMemoryEnabledChange(!memoryEnabled)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  memoryEnabled ? 'bg-indigo-600' : 'bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                    memoryEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                  }`}
+                />
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">Remember new details</span>
+              <button
+                role="switch"
+                aria-checked={memorySavingEnabled}
+                onClick={() => onMemorySavingEnabledChange(!memorySavingEnabled)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  memorySavingEnabled ? 'bg-indigo-600' : 'bg-gray-600'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                    memorySavingEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
           <div className="h-80 overflow-hidden">
             <MemoryPanel />
           </div>

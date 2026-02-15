@@ -292,6 +292,10 @@ function App() {
             onDeleteSession={handleDeleteSession}
             isCollapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+            memoryEnabled={chat.memoryEnabled}
+            onMemoryEnabledChange={chat.setMemoryEnabled}
+            memorySavingEnabled={chat.memorySavingEnabled}
+            onMemorySavingEnabledChange={chat.setMemorySavingEnabled}
           />
         }
         leftPanel={

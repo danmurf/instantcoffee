@@ -149,7 +149,9 @@ export function useChat() {
   const [currentSvg, setCurrentSvg] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+  const [memoryEnabled, setMemoryEnabled] = useState<boolean>(true);
+  const [memorySavingEnabled, setMemorySavingEnabled] = useState<boolean>(true);
+
   const [_streamingContent, setStreamingContent] = useState<string>('');
   const [_partialMermaid, setPartialMermaid] = useState<string>('');
   const [isDiagramUpdating, setIsDiagramUpdating] = useState<boolean>(false);
@@ -160,12 +162,16 @@ export function useChat() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const toOllamaMessages = useCallback(async (history: ChatMessage[], userContent: string): Promise<OllamaMessage[]> => {
-    let systemContent = SYSTEM_PROMPT;
+    let systemContent = memorySavingEnabled
+      ? SYSTEM_PROMPT
+      : SYSTEM_PROMPT.replace(/\n\nMEMORY TOOLS:[\s\S]*$/, '');
 
     // Inject memories into system prompt
-    const memoryContext = await getAllMemoriesForPrompt();
-    if (memoryContext) {
-      systemContent += `\n\nUSER'S CONTEXT (use this knowledge when generating diagrams):\n${memoryContext}`;
+    if (memoryEnabled) {
+      const memoryContext = await getAllMemoriesForPrompt();
+      if (memoryContext) {
+        systemContent += `\n\nUSER'S CONTEXT (use this knowledge when generating diagrams):\n${memoryContext}`;
+      }
     }
 
     if (currentMermaid) {
@@ -192,7 +198,7 @@ export function useChat() {
     ollamaMessages.push({ role: 'user', content: userContent });
 
     return ollamaMessages;
-  }, [currentMermaid]);
+  }, [currentMermaid, memoryEnabled, memorySavingEnabled]);
 
   const sendMessage = useCallback(async (content: string) => {
     const trimmedContent = content.trim();
@@ -254,7 +260,10 @@ export function useChat() {
       };
 
       // Use streamChatWithTools to enable tool calling
-      const result = await streamChatWithTools(DEFAULT_MODEL, apiMessages, [diagramTool, saveMemoryTool, deleteMemoryTool, updateMemoryTool], callbacks, abortController.signal);
+      const tools = memorySavingEnabled
+        ? [diagramTool, saveMemoryTool, deleteMemoryTool, updateMemoryTool]
+        : [diagramTool];
+      const result = await streamChatWithTools(DEFAULT_MODEL, apiMessages, tools, callbacks, abortController.signal);
       
       // Handle tool calls if the model used them
       if (result.toolCalls && result.toolCalls.length > 0) {
@@ -270,7 +279,7 @@ export function useChat() {
       abortControllerRef.current = null;
       setIsGenerating(false);
     }
-  }, [messages, toOllamaMessages]);
+  }, [messages, toOllamaMessages, memorySavingEnabled]);
 
   /**
    * Handle tool calls from the LLM
@@ -406,6 +415,10 @@ export function useChat() {
     cancelGeneration,
     isDiagramUpdating,
     setMessages,
+    memoryEnabled,
+    setMemoryEnabled,
+    memorySavingEnabled,
+    setMemorySavingEnabled,
     streamingContent: _streamingContent,
     partialMermaid: _partialMermaid,
   };
