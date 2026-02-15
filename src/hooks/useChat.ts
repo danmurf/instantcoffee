@@ -39,6 +39,8 @@ When generating diagrams:
 1. Use proper D2 syntax: https://d2lang.com/tour/intro
 2. Always wrap D2 code in markdown code blocks with the 'd2' language identifier
 3. Keep diagrams clear and readable
+4. NEVER add brackets [ or ] after connection labels (e.g., do NOT do: "label" [style])
+5. Use proper connection syntax: source -> target: "label" (no brackets after the label)
 
 Format your response like this:
 \`\`\`d2
@@ -65,6 +67,7 @@ function createMessage(role: MessageRole, content: string): ChatMessage {
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentD2, setCurrentD2] = useState<string>('');
+  const [currentSvg, setCurrentSvg] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -162,8 +165,9 @@ export function useChat() {
               
               try {
                 // Try to render partial D2 - if it fails, keep previous valid diagram
-                await renderD2(d2Code);
+                const svg = await renderD2(d2Code);
                 setCurrentD2(d2Code);
+                setCurrentSvg(svg);
               } catch (renderErr) {
                 // If partial D2 fails to render, keep previous valid diagram
                 console.warn('Partial D2 render failed, keeping previous diagram:', renderErr);
@@ -195,8 +199,9 @@ export function useChat() {
           // If D2 was extracted, render it and update state
           if (d2Code) {
             try {
-              await renderD2(d2Code);
+              const svg = await renderD2(d2Code);
               setCurrentD2(d2Code);
+              setCurrentSvg(svg);
               // Attach D2 source to message for potential future use
               assistantMessage.d2Source = d2Code;
             } catch (renderErr) {
@@ -228,6 +233,7 @@ export function useChat() {
   return {
     messages,
     currentD2,
+    currentSvg,
     isGenerating,
     error,
     sendMessage,

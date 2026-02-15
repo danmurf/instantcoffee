@@ -25,10 +25,18 @@ async function checkD2() {
 
 // Render D2 to SVG
 async function renderD2(d2Source) {
-  // Use printf to avoid echo's quote-handling issues
-  const command = `printf '%s' ${JSON.stringify(d2Source)} | d2 -`
-  const { stdout, stderr } = await execAsync(command, { shell: '/bin/bash' })
-  return stdout
+  // Sanitize D2 source - remove common LLM-generated syntax errors
+  const sanitized = d2Source
+    .replace(/\[\s*\]/g, '')  // Remove empty brackets []
+    .replace(/"\s*\[\s*/g, '" ')  // Fix "label" [ -> "label"
+    .replace(/"\s*\]\s*/g, '"')   // Fix "label" ] -> "label"
+    .trim();
+  
+  // Use heredoc to properly pass multi-line D2 source
+  const escapedSource = sanitized.replace(/'/g, "'\\''");
+  const command = `echo '${escapedSource}' | d2 -`;
+  const { stdout, stderr } = await execAsync(command, { shell: '/bin/bash' });
+  return stdout;
 }
 
 app.post('/api/render', async (req, res) => {

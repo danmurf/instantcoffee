@@ -1,5 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { useChat } from '../hooks/useChat';
+import type { ChatMessage } from '../types/chat';
+
+interface ChatPanelProps {
+  messages: ChatMessage[];
+  isGenerating: boolean;
+  error: string | null;
+  onSendMessage: (content: string) => Promise<void>;
+}
 
 const EXAMPLE_PROMPTS = [
   "Create a sequence diagram for user login",
@@ -8,8 +15,7 @@ const EXAMPLE_PROMPTS = [
   "Show an architecture diagram for a web app"
 ];
 
-export function ChatPanel() {
-  const { messages: chatMessages, isGenerating, error, sendMessage } = useChat();
+export function ChatPanel({ messages, isGenerating, error, onSendMessage }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -20,9 +26,8 @@ export function ChatPanel() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [chatMessages]);
+  }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -37,9 +42,7 @@ export function ChatPanel() {
     if (!trimmedInput || isGenerating) return;
 
     setInput('');
-    
-    // Use the useChat hook to send the message
-    await sendMessage(trimmedInput);
+    await onSendMessage(trimmedInput);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -54,16 +57,14 @@ export function ChatPanel() {
     textareaRef.current?.focus();
   };
 
-  const showWelcome = chatMessages.length === 0;
+  const showWelcome = messages.length === 0;
 
   return (
     <div className="flex h-full flex-col bg-white">
-      {/* Header */}
       <div className="border-b border-gray-200 px-4 py-3">
         <h2 className="text-lg font-semibold text-gray-900">Chat</h2>
       </div>
 
-      {/* Error Banner */}
       {error && (
         <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 p-3">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500">
@@ -75,7 +76,6 @@ export function ChatPanel() {
         </div>
       )}
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {showWelcome ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
@@ -103,7 +103,7 @@ export function ChatPanel() {
           </div>
         ) : (
           <div className="space-y-4">
-            {chatMessages.map((message) => (
+            {messages.map((message) => (
               <div
                 key={message.id}
                 className={`flex ${
@@ -137,7 +137,6 @@ export function ChatPanel() {
         )}
       </div>
 
-      {/* Input Area */}
       <div className="border-t border-gray-200 p-4">
         <form onSubmit={handleSubmit} className="flex items-end gap-2">
           <div className="flex-1">

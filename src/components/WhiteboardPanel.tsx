@@ -66,7 +66,7 @@ export function WhiteboardPanel({
     if (svgWidth > 0 && svgHeight > 0) {
       const scaleX = containerWidth / svgWidth;
       const scaleY = containerHeight / svgHeight;
-      const fitScale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+      const fitScale = Math.min(scaleX, scaleY, 1);
       
       if (fitScale < 1) {
         svgElement.style.width = `${svgWidth * fitScale}px`;
@@ -181,10 +181,27 @@ export function WhiteboardPanel({
     );
   }
 
+  // Ensure the outer SVG from D2 has width/height attributes
+  // D2 outputs a wrapper <svg> with only viewBox (no dimensions),
+  // which causes it to collapse when rendered inline with Tailwind's preflight styles
+  const processedSvg = svg ? svg.replace(
+    /^(<\?xml[^?]*\?>)?\s*<svg([^>]*?)>/,
+    (_match, _xmlDecl, attrs) => {
+      // If the outer <svg> already has a width attribute, leave it alone
+      if (/\bwidth\s*=/.test(attrs)) return `<svg${attrs}>`;
+      // Extract viewBox dimensions to use as width/height
+      const vbMatch = attrs.match(/viewBox="[^\s"]*\s+[^\s"]*\s+(\S+)\s+(\S+)"/);
+      if (vbMatch) {
+        return `<svg${attrs} width="${vbMatch[1]}" height="${vbMatch[2]}">`;
+      }
+      return `<svg${attrs}>`;
+    }
+  ) : undefined;
+
   // SVG display state
-  if (svg) {
+  if (processedSvg) {
     return (
-      <div 
+      <div
         ref={setContainerRef}
         className="relative h-full w-full overflow-hidden bg-white"
         onWheel={handleWheel}
@@ -310,9 +327,9 @@ export function WhiteboardPanel({
             transition: isPanning ? 'none' : 'transform 0.1s ease-out'
           }}
         >
-          <div 
-            className="flex h-full w-full items-center justify-center"
-            dangerouslySetInnerHTML={{ __html: svg }}
+          <div
+            className="inline"
+            dangerouslySetInnerHTML={{ __html: processedSvg }}
           />
         </div>
       </div>

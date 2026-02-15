@@ -4,9 +4,9 @@ import { ChatPanel } from './components/ChatPanel';
 import { WhiteboardPanel } from './components/WhiteboardPanel';
 import { SourceEditorModal } from './components/SourceEditorModal';
 import { renderD2 } from './lib/d2';
+import { useChat } from './hooks/useChat';
 
-// Sample D2 diagram for demo/testing
-const DEMO_D2 = `shape: box
+const DEMO_D2 = `shape: rectangle
 hello -> world: says hello
 world: Hello, World!
 
@@ -17,21 +17,33 @@ style {
 `;
 
 function App() {
+  const chat = useChat();
+  
   const [svg, setSvg] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [d2Source, setD2Source] = useState<string>(DEMO_D2);
   const [showEditor, setShowEditor] = useState<boolean>(false);
 
-  // History management for undo/redo
   const [history, setHistory] = useState<string[]>([DEMO_D2]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
 
-  // Check if we can undo/redo
   const canUndo = historyIndex > 0;
   const canRedo = historyIndex < history.length - 1;
 
-  // Undo handler
+  useEffect(() => {
+    if (chat.currentSvg) {
+      setSvg(chat.currentSvg);
+      if (chat.currentD2) {
+        setD2Source(chat.currentD2);
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push(chat.currentD2);
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+      }
+    }
+  }, [chat.currentSvg, chat.currentD2]);
+
   const handleUndo = useCallback(() => {
     if (canUndo) {
       const newIndex = historyIndex - 1;
@@ -39,7 +51,6 @@ function App() {
       const previousSource = history[newIndex];
       setD2Source(previousSource);
       
-      // Re-render the diagram
       setIsLoading(true);
       setError(null);
       renderD2(previousSource)
@@ -49,7 +60,6 @@ function App() {
     }
   }, [canUndo, history, historyIndex]);
 
-  // Redo handler
   const handleRedo = useCallback(() => {
     if (canRedo) {
       const newIndex = historyIndex + 1;
@@ -57,7 +67,6 @@ function App() {
       const nextSource = history[newIndex];
       setD2Source(nextSource);
       
-      // Re-render the diagram
       setIsLoading(true);
       setError(null);
       renderD2(nextSource)
@@ -67,22 +76,18 @@ function App() {
     }
   }, [canRedo, history, historyIndex]);
 
-  // Keyboard shortcuts for undo/redo
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in an input/textarea
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
         return;
       }
 
-      // Check for undo: Ctrl+Z or Cmd+Z
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         handleUndo();
       }
 
-      // Check for redo: Ctrl+Shift+Z or Cmd+Shift+Z
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) {
         e.preventDefault();
         handleRedo();
@@ -93,7 +98,6 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleUndo, handleRedo]);
 
-  // Load demo diagram on mount
   useEffect(() => {
     async function loadDemo() {
       setIsLoading(true);
@@ -112,9 +116,7 @@ function App() {
     loadDemo();
   }, []);
 
-  // Handle save from editor modal
   const handleEditorSave = async (newSource: string) => {
-    // Truncate any redo history and push new source
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newSource);
     
@@ -138,10 +140,16 @@ function App() {
   return (
     <>
       <Layout
-        leftPanel={<ChatPanel />}
+        leftPanel={
+          <ChatPanel 
+            messages={chat.messages}
+            onSendMessage={chat.sendMessage} 
+            isGenerating={chat.isGenerating} 
+            error={chat.error}
+          />
+        }
         rightPanel={
           <div className="relative h-full w-full">
-            {/* Edit button in top-right corner */}
             <button
               onClick={() => setShowEditor(true)}
               className="absolute right-4 top-4 z-10 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -150,7 +158,7 @@ function App() {
             </button>
             <WhiteboardPanel 
               svg={svg} 
-              isLoading={isLoading} 
+              isLoading={isLoading || chat.isGenerating}
               error={error}
               onUndo={handleUndo}
               onRedo={handleRedo}
