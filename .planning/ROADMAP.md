@@ -161,9 +161,11 @@ Plans:
 
 **Depends on:** Phase 5
 
-**Status:** Planned (1 plan)
+**Status:** ✓ Complete (2026-02-15)
 
-**Plans:**
+**Plans:** 1 plan
+
+Plans:
 - [x] 06-01-PLAN.md — Implement tool calling capability
 
 ---
@@ -177,7 +179,7 @@ Plans:
 | 3 | Editing & Polish | 8 | ✓ Complete |
 | 4 | Switch from D2 to Mermaid | N/A (infra) | ✓ Complete |
 | 5 | Persistence & Semantic Memory | 5 | Planned (3 plans) |
-| 6 | Use LLM Tool Calling for Diagram Updates | TBD | Planned (1 plan) |
+| 6 | Use LLM Tool Calling for Diagram Updates | N/A (infra) | ✓ Complete |
 
 ---
 
@@ -194,15 +196,6 @@ Plans:
 | UI/UX | UI-01, UI-02, UI-03 | 1, 2 |
 
 **Total:** 26/26 requirements mapped ✓
-
-### Phase 1: Use LLM tool calling for diagram updates
-
-**Goal:** [To be planned]
-**Depends on:** Phase 0
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 1 to break down)
 
 ---
 
