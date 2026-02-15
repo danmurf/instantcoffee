@@ -210,7 +210,11 @@ export async function streamChatWithTools(
       }
     }
 
-    callbacks.onComplete(fullResponse);
+    // Only call onComplete if no tool calls — when tools are used,
+    // the caller (handleToolCalls) manages message creation instead
+    if (toolCalls.length === 0) {
+      callbacks.onComplete(fullResponse);
+    }
     return { content: fullResponse, toolCalls };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {

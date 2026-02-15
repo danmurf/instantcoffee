@@ -213,7 +213,7 @@ export function useChat() {
       
       // Handle tool calls if the model used them
       if (result.toolCalls && result.toolCalls.length > 0) {
-        await handleToolCalls(result.toolCalls, apiMessages, callbacks);
+        await handleToolCalls(result.toolCalls, result.content);
       }
 
     } catch (err) {
@@ -230,48 +230,49 @@ export function useChat() {
    */
   const handleToolCalls = useCallback(async (
     toolCalls: ToolCall[],
-    existingMessages: OllamaMessage[],
-    callbacks: StreamCallbacks
+    initialContent: string,
   ): Promise<void> => {
     for (const toolCall of toolCalls) {
       if (toolCall.name === 'update_diagram') {
         let mermaidCode = '';
-        
+
         try {
-          // Parse the arguments JSON
           const args = JSON.parse(toolCall.arguments);
           mermaidCode = args.mermaid_code || '';
+          // Strip markdown fences if the model included them in the tool argument
+          const fenceMatch = mermaidCode.match(/```(?:mermaid)?\s*\n?([\s\S]*?)```/);
+          if (fenceMatch) {
+            mermaidCode = fenceMatch[1].trim();
+          }
         } catch {
           console.error('Failed to parse tool arguments:', toolCall.arguments);
-          mermaidCode = '';
         }
 
         if (mermaidCode) {
           setIsDiagramUpdating(true);
-          
+
           try {
             const svg = await renderMermaid(mermaidCode);
             setCurrentMermaid(mermaidCode);
             setCurrentSvg(svg);
-            
-            // Send tool result back to the model to continue conversation
-            const toolResultMessage: OllamaMessage = {
-              role: 'tool',
-              content: JSON.stringify({ success: true, mermaid_code: mermaidCode }),
-              tool_name: 'update_diagram',
-            };
-
-            // Continue conversation with tool result
-            const continuedMessages = [...existingMessages, toolResultMessage];
-            
-            await streamChatWithTools(DEFAULT_MODEL, continuedMessages, [diagramTool], callbacks);
-            
           } catch (renderErr) {
             console.error('Failed to render diagram from tool call:', renderErr);
-            callbacks.onError(renderErr instanceof Error ? renderErr : new Error(String(renderErr)));
+            setError(`Failed to render diagram: ${renderErr instanceof Error ? renderErr.message : String(renderErr)}`);
           } finally {
             setIsDiagramUpdating(false);
           }
+
+          // Create assistant message with the diagram
+          const assistantContent = initialContent || 'Diagram updated.';
+          const assistantMessage = createMessage('assistant', assistantContent);
+          assistantMessage.mermaidSource = mermaidCode;
+
+          streamingContentRef.current = '';
+          partialMermaidRef.current = '';
+          setStreamingContent('');
+          setPartialMermaid('');
+
+          setMessages(prev => [...prev, assistantMessage]);
         }
       }
     }
