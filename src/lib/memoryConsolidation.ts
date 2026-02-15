@@ -44,9 +44,9 @@ export async function consolidateMemories(
   console.log('Sending request to Ollama...');
 
   try {
-    // Call Ollama API with timeout (2 minutes for large batches)
+    // Call Ollama API with timeout (10 minutes for large batches)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 600000); // 600 second timeout
 
     const response = await fetch('http://localhost:11434/api/chat', {
       method: 'POST',
@@ -135,7 +135,7 @@ export async function consolidateMemories(
     // Handle specific error types
     if (error instanceof Error) {
       if (error.name === 'AbortError') {
-        throw new Error('Request timed out after 2 minutes. This usually means Ollama is taking too long to process your memories. Try:\n1. Check if Ollama is running (ollama serve)\n2. Use a faster model\n3. Reduce the number of memories before consolidating');
+        throw new Error('Request timed out after 10 minutes. This usually means Ollama is taking too long to process your memories. Try:\n1. Check if Ollama is running (ollama serve)\n2. Use a faster model\n3. Reduce the number of memories before consolidating');
       }
       throw error;
     }
