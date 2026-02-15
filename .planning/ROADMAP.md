@@ -1,9 +1,9 @@
 # Roadmap: Instant Coffee
 
-**Project:** Instant Coffee  
-**Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning D2 syntax.  
+**Project:** Instant Coffee
+**Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning D2 syntax.
 **Phase Count:** 6
-**Depth:** Quick (3-5 phases)  
+**Depth:** Quick (3-5 phases)
 **Coverage:** 26/26 v1 requirements mapped ✓
 
 ---
@@ -148,12 +148,14 @@ Plans:
 4. **Memory Persists:** Semantic memory survives browser sessions (stored in IndexedDB)
 5. **Memory Used:** When generating diagrams, system includes relevant memory context in prompts
 
-**Status:** Planned (3 plans)
+**Status:** In Progress (3 plans, 2 waves)
 
-**Plans:**
-- [ ] 05-01-PLAN.md — Session persistence (save/load using Dexie.js)
-- [ ] 05-02-PLAN.md — Semantic memory storage and UI
-- [ ] 05-03-PLAN.md — Memory integration into AI prompts
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Database setup, session persistence, and auto-save
+- [ ] 05-02-PLAN.md — Semantic memory storage and management panel
+- [ ] 05-03-PLAN.md — Session sidebar, memory chat commands, and prompt injection
 
 ## Phase 6: Use LLM Tool Calling for Diagram Updates
 
@@ -178,7 +180,7 @@ Plans:
 | 2 | Core Chat-to-Diagram Loop | 10 | ✓ Complete |
 | 3 | Editing & Polish | 8 | ✓ Complete |
 | 4 | Switch from D2 to Mermaid | N/A (infra) | ✓ Complete |
-| 5 | Persistence & Semantic Memory | 5 | Planned (3 plans) |
+| 5 | Persistence & Semantic Memory | 5 | In Progress |
 | 6 | Use LLM Tool Calling for Diagram Updates | N/A (infra) | ✓ Complete |
 
 ---
