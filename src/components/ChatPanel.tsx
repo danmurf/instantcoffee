@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { ChatMessage } from '../types/chat';
+import { LoadingAnimation } from './LoadingAnimation';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -122,14 +123,8 @@ export function ChatPanel({ messages, isGenerating, error, onSendMessage }: Chat
               </div>
             ))}
             {isGenerating && (
-              <div className="flex justify-start">
-                <div className="rounded-lg bg-gray-100 px-4 py-2">
-                  <div className="flex space-x-1">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400" style={{ animationDelay: '0ms' }} />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400" style={{ animationDelay: '150ms' }} />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
+              <div className="flex justify-start pl-2">
+                <LoadingAnimation />
               </div>
             )}
             <div ref={messagesEndRef} />
