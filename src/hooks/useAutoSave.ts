@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import type { SessionState } from '../types/session';
 import { useSessionStore } from '../stores/sessionStore';
-import { createSession, updateSession } from '../db/sessions';
+import { createSession, updateSession, generateTitleForSession } from '../db/sessions';
 
 const DEFAULT_DEBOUNCE_MS = 1500;
 
@@ -24,6 +24,12 @@ export function useAutoSave({ sessionState, enabled }: UseAutoSaveOptions) {
   const isSavingRef = useRef(false);
   const pendingSaveRef = useRef<SessionState | null>(null);
 
+  // Track whether title has been generated for this session
+  const titleGeneratedRef = useRef(false);
+
+  // Track the most recent session ID created in this hook
+  const latestSessionIdRef = useRef<number | null>(currentSessionId);
+
   const getStateKey = useCallback((state: SessionState): string => {
     return JSON.stringify({
       messagesLength: state.messages.length,
@@ -45,6 +51,7 @@ export function useAutoSave({ sessionState, enabled }: UseAutoSaveOptions) {
       if (sessionId === null) {
         const newId = await createSession(state);
         setCurrentSessionId(newId);
+        latestSessionIdRef.current = newId;
       } else {
         await updateSession(sessionId, state);
       }
@@ -110,8 +117,26 @@ export function useAutoSave({ sessionState, enabled }: UseAutoSaveOptions) {
     prevMessagesLengthRef.current = sessionState.messages.length;
 
     // Save immediately for new sessions or when a new message arrives
-    if (sessionIdRef.current === null || messagesChanged) {
+    const effectiveSessionId = sessionIdRef.current ?? latestSessionIdRef.current;
+    if (effectiveSessionId === null || messagesChanged) {
       performSave(sessionState);
+
+      // Generate title after first assistant response (non-blocking)
+      if (
+        messagesChanged &&
+        effectiveSessionId !== null &&
+        !titleGeneratedRef.current
+      ) {
+        const hasAssistantMessage = sessionState.messages.some(m => m.role === 'assistant');
+        if (hasAssistantMessage) {
+          titleGeneratedRef.current = true;
+          const firstUserMessage = sessionState.messages.find(m => m.role === 'user');
+          if (firstUserMessage) {
+            generateTitleForSession(effectiveSessionId, firstUserMessage.content);
+          }
+        }
+      }
+
       return;
     }
 
@@ -132,6 +157,8 @@ export function useAutoSave({ sessionState, enabled }: UseAutoSaveOptions) {
   const resetTracking = useCallback(() => {
     prevStateRef.current = null;
     prevMessagesLengthRef.current = 0;
+    titleGeneratedRef.current = false;
+    latestSessionIdRef.current = null;
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;

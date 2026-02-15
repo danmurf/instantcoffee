@@ -32,19 +32,25 @@ export async function createSession(state: SessionState): Promise<number> {
     updatedAt: now
   }) as number;
 
-  // Generate AI title in the background — don't block session creation
-  const firstUserMessage = state.messages.find(m => m.role === 'user');
-  if (firstUserMessage) {
-    generateSessionTitle(firstUserMessage.content).then(async (title) => {
-      if (title) {
-        await db.sessions.update(id, { name: title });
-      }
-    }).catch(() => {
-      // Keep fallback name on failure
-    });
-  }
-
   return id;
+}
+
+/**
+ * Generate and update session title in the background.
+ * Called after the assistant responds to avoid blocking the main request.
+ */
+export async function generateTitleForSession(
+  sessionId: number,
+  userMessage: string
+): Promise<void> {
+  try {
+    const title = await generateSessionTitle(userMessage);
+    if (title) {
+      await db.sessions.update(sessionId, { name: title, updatedAt: Date.now() });
+    }
+  } catch {
+    // Keep fallback name on failure
+  }
 }
 
 /**
