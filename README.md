@@ -43,6 +43,11 @@ The model will be used automatically by the application.
 - Source code editor for manual Mermaid tweaks
 - Undo/Redo support (Ctrl+Z / Ctrl+Shift+Z)
 - Export to SVG and PNG
+- **Persistent Memory**: The AI remembers context across sessions
+  - Automatically learns facts from conversations (services, teams, preferences, etc.)
+  - Manual memory management with add/edit/delete controls
+  - AI-powered memory consolidation to remove duplicates and contradictions
+  - All memories stored locally in your browser (IndexedDB)
 
 ## How It Works
 
@@ -80,16 +85,36 @@ flowchart TD
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS
 - **Diagram Engine**: Mermaid.js (client-side)
 - **AI**: Ollama
+- **Storage**: Dexie.js (IndexedDB wrapper) for persistent memories
 
 ## Project Structure
 
 ```
 src/
-├── components/     # React components
-├── lib/           # Mermaid and Ollama utilities
-├── hooks/         # Custom React hooks
+├── components/     # React components (ChatPanel, WhiteboardPanel, MemoryPanel)
+├── lib/           # Mermaid, Ollama, and memory utilities
+├── hooks/         # Custom React hooks (useChat, useMemories)
 ├── types/         # TypeScript types
+├── db/            # Dexie database and memory operations
 ```
+
+## Memory System
+
+The application includes a persistent memory system that helps the AI remember information across sessions:
+
+### How It Works
+
+1. **Automatic Learning**: As you chat, the AI automatically saves important facts using the `save_memory`, `update_memory`, and `delete_memory` tools
+2. **Context Injection**: Saved memories are injected into every AI request as "USER'S CONTEXT"
+3. **Manual Management**: Use the Memory Panel to view, add, edit, or delete memories manually
+4. **Consolidation**: Click "Cleanup" to use AI to deduplicate and consolidate memories
+
+### Memory Features
+
+- **Atomic Storage**: Each memory is a single, self-contained fact
+- **Local First**: All data stored in your browser using IndexedDB (nothing sent to external servers)
+- **Smart Updates**: The AI can update existing memories when new information contradicts old facts
+- **Toggleable**: Disable memory reading or saving via the settings menu if desired
 
 ## License
 

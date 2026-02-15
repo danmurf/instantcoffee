@@ -19,7 +19,7 @@ No test framework or linter is configured.
 
 ## Architecture
 
-This is a natural-language-to-diagram app. Users describe diagrams in a chat panel, Ollama generates Mermaid code, and the browser renders it to SVG via the mermaid library.
+This is a natural-language-to-diagram app with persistent memory. Users describe diagrams in a chat panel, Ollama generates Mermaid code, and the browser renders it to SVG via the mermaid library. The AI remembers context across sessions using a local IndexedDB database.
 
 **Data flow:** User chat input → `useChat` hook → Ollama streaming API (localhost:11434) → extract Mermaid code from response → client-side mermaid.render() → SVG in WhiteboardPanel
 
@@ -28,6 +28,45 @@ This is a natural-language-to-diagram app. Users describe diagrams in a chat pan
 - `useChat` maintains conversation history and injects the current Mermaid source into the system prompt so the LLM can iteratively refine diagrams
 - Mermaid rendering during streaming is debounced (500ms) — partial Mermaid is attempted but failures are silently ignored to keep the last valid diagram visible
 - Undo/redo is managed as a Mermaid source history stack in `App.tsx`, not in individual components
+
+### Memory System
+
+**Storage:** Dexie.js (IndexedDB wrapper) stores memories locally in the browser (`src/db/`)
+
+**Memory lifecycle:**
+1. `useChat` provides the AI with `save_memory`, `update_memory`, `delete_memory` tools
+2. AI automatically calls these tools during conversation to save relevant facts
+3. All memories are injected into the system prompt as "USER'S CONTEXT" on each request
+4. Users can manually manage memories via `MemoryPanel` component
+5. Memories can be consolidated/cleaned using `memoryConsolidation.ts` (calls Ollama to deduplicate)
+
+**Key implementation details:**
+- Each memory is atomic (one fact per memory) for better retrieval and updates
+- Memory operations use optimistic UI updates via `useLiveQuery` from dexie-react-hooks
+- The consolidation feature uses a non-streaming Ollama request to process all memories as a batch
+- Memory enable/disable toggles control both reading from and saving to memory independently
+
+## Project Structure
+
+```
+src/
+├── components/          # React components
+│   ├── ChatPanel.tsx    # Chat interface with message history
+│   ├── WhiteboardPanel.tsx  # Mermaid diagram renderer
+│   └── MemoryPanel.tsx  # Memory management UI
+├── hooks/
+│   ├── useChat.ts       # Chat logic, Ollama streaming, tool calls
+│   └── useMemories.ts   # Dexie queries for memory CRUD
+├── lib/
+│   ├── ollama.ts        # Ollama API client
+│   ├── mermaid.ts       # Mermaid rendering utilities
+│   └── memoryConsolidation.ts  # AI-powered memory cleanup
+├── db/
+│   ├── index.ts         # Dexie database schema
+│   └── memories.ts      # Memory CRUD operations
+└── types/
+    └── memory.ts        # Memory TypeScript interface
+```
 
 ## Path Aliases
 
