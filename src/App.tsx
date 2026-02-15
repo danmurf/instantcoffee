@@ -9,15 +9,45 @@ import { useChat } from './hooks/useChat';
 initMermaid();
 
 const DEMO_MERMAID = `flowchart TD
-    A[💡 Enter your idea] --> B[✨ See your diagram]
-    B --> C[❓ Ask questions]
-    B --> D[🔄 Request changes]
-    C --> B
-    D --> B
-    style A fill:#f0f9ff,stroke:#6366f1
-    style B fill:#f0f9ff,stroke:#6366f1
-    style C fill:#f0f9ff,stroke:#6366f1
-    style D fill:#f0f9ff,stroke:#6366f1
+    Start([🚀 Start]) --> Idea[💡 Enter your idea]
+    
+    Idea --> Generate[✨ AI generates diagram]
+    Generate --> Whiteboard[📋 Diagram on whiteboard]
+    
+    Whiteboard --> Choice{What's next?}
+    
+    Choice --> Changes[🔄 Request changes]
+    Changes --> Generate
+    
+    Choice --> Questions[💬 Ask questions]
+    Questions --> Answer[💭 AI answers]
+    Answer --> Choice
+    
+    Choice --> Done[✅ Finished?]
+    Done --> Export{How to save?}
+    
+    Export --> PNG[🖼️ Export as PNG]
+    Export --> SVG[📐 Export as SVG]
+    Export --> Code[📄 Copy mermaid code]
+    
+    PNG --> End([💜 Done!])
+    SVG --> End
+    Code --> End
+    
+    style Start fill:#fdf4ff,stroke:#a855f7,stroke-width:2px
+    style Idea fill:#f0f9ff,stroke:#6366f1
+    style Generate fill:#ecfeff,stroke:#06b6d4,stroke-width:2px
+    style Whiteboard fill:#faf5ff,stroke:#a855f7
+    style Choice fill:#fff7ed,stroke:#f97316
+    style Changes fill:#fef3c7,stroke:#f59e0b
+    style Questions fill:#e0e7ff,stroke:#6366f1
+    style Answer fill:#e0e7ff,stroke:#6366f1
+    style Done fill:#dcfce7,stroke:#22c55e
+    style Export fill:#dcfce7,stroke:#22c55e
+    style PNG fill:#f0f9ff,stroke:#0ea5e9
+    style SVG fill:#f0f9ff,stroke:#0ea5e9
+    style Code fill:#f0f9ff,stroke:#0ea5e9
+    style End fill:#fdf4ff,stroke:#a855f7,stroke-width:2px
 `;
 
 function App() {
