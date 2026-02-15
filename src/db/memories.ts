@@ -1,24 +1,18 @@
 import { db } from './index';
-import type { Memory, MemoryCategory } from '../types/memory';
+import type { Memory } from '../types/memory';
 
 /**
  * Create a new memory
  */
-export async function createMemory(
-  category: MemoryCategory,
-  name: string,
-  content: string
-): Promise<number> {
+export async function createMemory(content: string): Promise<number> {
   const now = Date.now();
-  
+
   const id = await db.memories.add({
-    category,
-    name,
     content,
     createdAt: now,
     updatedAt: now,
   });
-  
+
   return id as number;
 }
 
@@ -27,7 +21,7 @@ export async function createMemory(
  */
 export async function updateMemory(
   id: number,
-  updates: Partial<Pick<Memory, 'category' | 'name' | 'content'>>
+  updates: Partial<Pick<Memory, 'content'>>
 ): Promise<void> {
   await db.memories.update(id, {
     ...updates,
@@ -43,10 +37,10 @@ export async function deleteMemory(id: number): Promise<void> {
 }
 
 /**
- * List all memories ordered by category then name
+ * List all memories ordered by creation time
  */
 export async function listMemories(): Promise<Memory[]> {
-  return db.memories.orderBy('category').toArray();
+  return db.memories.orderBy('createdAt').toArray();
 }
 
 /**
@@ -54,14 +48,10 @@ export async function listMemories(): Promise<Memory[]> {
  */
 export async function getAllMemoriesForPrompt(): Promise<string> {
   const memories = await db.memories.toArray();
-  
+
   if (memories.length === 0) {
     return '';
   }
-  
-  const formatted = memories
-    .map(m => `- [${m.category}] ${m.name}: ${m.content}`)
-    .join('\n');
-  
-  return formatted;
+
+  return memories.map(m => `- ${m.content}`).join('\n');
 }

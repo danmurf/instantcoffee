@@ -11,7 +11,7 @@ export class InstantCoffeeDB extends Dexie {
 
     this.version(1).stores({
       sessions: '++id, name, updatedAt',
-      memories: '++id, category, name, updatedAt'
+      memories: '++id, createdAt'
     });
   }
 }

@@ -11,7 +11,7 @@ interface ChatPanelProps {
 const EXAMPLE_PROMPTS = [
   "Create a sequence diagram for user login",
   "Make an ERD for an e-commerce app",
-  "Remember that auth-service is owned by Platform team",
+  "Remember that our team meets on Tuesdays",
   "Draw a flowchart for order processing",
 ];
 
