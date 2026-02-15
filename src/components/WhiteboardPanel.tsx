@@ -240,7 +240,7 @@ export function WhiteboardPanel({
         style={{ cursor: isPanning ? 'grabbing' : 'grab' }}
       >
         {/* Toolbar */}
-        <div className="absolute right-4 top-4 z-10 flex items-center gap-1 rounded-lg bg-white p-1 shadow-md">
+        <div className="absolute right-4 top-14 z-10 flex items-center gap-1 rounded-lg bg-white p-1 shadow-md">
           {/* Zoom controls */}
           <button
             onClick={handleZoomOut}
