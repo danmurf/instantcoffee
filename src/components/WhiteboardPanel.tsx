@@ -25,9 +25,9 @@ export interface WhiteboardPanelProps {
   canRedo?: boolean;
 }
 
-export function WhiteboardPanel({ 
-  svg, 
-  isLoading, 
+export function WhiteboardPanel({
+  svg,
+  isLoading,
   error,
   onUndo,
   onRedo,
@@ -43,37 +43,63 @@ export function WhiteboardPanel({
   const [initialPan, setInitialPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [showExportDropdown, setShowExportDropdown] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const fitScaleRef = useRef<number>(1);
+  // Natural (viewBox) dimensions of the SVG, used to resize on zoom
+  const naturalSizeRef = useRef<{ w: number; h: number } | null>(null);
 
-  // Reset transform when SVG changes
-  useEffect(() => {
-    setScale(1);
-    setPanX(0);
-    setPanY(0);
-  }, [svg]);
+  // Read natural dimensions from the diagram SVG's viewBox
+  const readNaturalSize = useCallback(() => {
+    if (!containerRef) return null;
+    const svgEl = containerRef.querySelector('.inline svg');
+    if (!svgEl) return null;
+    const vb = svgEl.getAttribute('viewBox')?.split(/\s+/);
+    if (vb && vb.length === 4) {
+      const size = { w: parseFloat(vb[2]), h: parseFloat(vb[3]) };
+      if (size.w > 0 && size.h > 0) return size;
+    }
+    return null;
+  }, [containerRef]);
 
-  // Auto-scale SVG to fit container
-  useEffect(() => {
-    if (!svg || !containerRef) return;
-    
-    const svgElement = containerRef.querySelector('svg');
-    if (!svgElement) return;
-    
+  // Fit diagram to container, used on SVG change and reset
+  const fitToView = useCallback(() => {
+    if (!containerRef) return;
+
+    const size = readNaturalSize();
+    if (!size) return;
+    naturalSizeRef.current = size;
+
     const containerWidth = containerRef.clientWidth;
     const containerHeight = containerRef.clientHeight;
-    const svgWidth = parseFloat(svgElement.getAttribute('width') || '0') || svgElement.clientWidth;
-    const svgHeight = parseFloat(svgElement.getAttribute('height') || '0') || svgElement.clientHeight;
-    
-    if (svgWidth > 0 && svgHeight > 0) {
-      const scaleX = containerWidth / svgWidth;
-      const scaleY = containerHeight / svgHeight;
-      const fitScale = Math.min(scaleX, scaleY, 1);
-      
-      if (fitScale < 1) {
-        svgElement.style.width = `${svgWidth * fitScale}px`;
-        svgElement.style.height = `${svgHeight * fitScale}px`;
-      }
-    }
-  }, [svg, containerRef]);
+    if (containerWidth === 0 || containerHeight === 0) return;
+
+    const scaleX = containerWidth / size.w;
+    const scaleY = containerHeight / size.h;
+    const fitScale = Math.min(scaleX, scaleY) * 0.9; // 90% for padding
+
+    fitScaleRef.current = fitScale;
+    setScale(fitScale);
+    setPanX(0);
+    setPanY(0);
+  }, [containerRef, readNaturalSize]);
+
+  // Auto-fit when SVG changes
+  useEffect(() => {
+    if (!svg || !containerRef) return;
+    // Use rAF to ensure the SVG is rendered in the DOM before measuring
+    const id = requestAnimationFrame(() => fitToView());
+    return () => cancelAnimationFrame(id);
+  }, [svg, containerRef, fitToView]);
+
+  // Re-render SVG at current zoom size so vectors stay crisp
+  useEffect(() => {
+    if (!containerRef) return;
+    const svgEl = containerRef.querySelector('.inline svg');
+    if (!svgEl) return;
+    const size = naturalSizeRef.current;
+    if (!size) return;
+    svgEl.setAttribute('width', String(size.w * scale));
+    svgEl.setAttribute('height', String(size.h * scale));
+  }, [scale, containerRef, svg]);
 
   // Zoom handlers
   const handleZoomIn = useCallback(() => {
@@ -85,10 +111,8 @@ export function WhiteboardPanel({
   }, []);
 
   const handleReset = useCallback(() => {
-    setScale(1);
-    setPanX(0);
-    setPanY(0);
-  }, []);
+    fitToView();
+  }, [fitToView]);
 
   // Export handlers
   const handleExportSvg = useCallback(() => {
@@ -181,20 +205,24 @@ export function WhiteboardPanel({
     );
   }
 
-  // Ensure the outer SVG from D2 has width/height attributes
-  // D2 outputs a wrapper <svg> with only viewBox (no dimensions),
-  // which causes it to collapse when rendered inline with Tailwind's preflight styles
+  // Ensure the outer SVG has explicit pixel width/height from its viewBox.
+  // Mermaid may set width="100%" or omit dimensions entirely, which causes
+  // the SVG to collapse or lose its intrinsic size for zoom calculations.
+  // Also strip max-width style so CSS transform controls all sizing.
   const processedSvg = svg ? svg.replace(
     /^(<\?xml[^?]*\?>)?\s*<svg([^>]*?)>/,
     (_match, _xmlDecl, attrs) => {
-      // If the outer <svg> already has a width attribute, leave it alone
-      if (/\bwidth\s*=/.test(attrs)) return `<svg${attrs}>`;
-      // Extract viewBox dimensions to use as width/height
-      const vbMatch = attrs.match(/viewBox="[^\s"]*\s+[^\s"]*\s+(\S+)\s+(\S+)"/);
-      if (vbMatch) {
-        return `<svg${attrs} width="${vbMatch[1]}" height="${vbMatch[2]}">`;
-      }
-      return `<svg${attrs}>`;
+      const vbMatch = attrs.match(/viewBox="[^\s"]*\s+[^\s"]*\s+(\S+)\s+(\S+)"/i);
+      if (!vbMatch) return `<svg${attrs}>`;
+      const [, vbW, vbH] = vbMatch;
+      // Strip existing width/height attrs (including "100%") and max-width from style
+      let cleaned = attrs
+        .replace(/\b(width|height)\s*=\s*"[^"]*"/g, '')
+        .replace(/style="[^"]*"/, (styleAttr) =>
+          styleAttr.replace(/max-width:\s*[^;"]+(;?\s*)/g, '')
+        )
+        .replace(/\s{2,}/g, ' ');
+      return `<svg ${cleaned.trim()} width="${vbW}" height="${vbH}">`;
     }
   ) : undefined;
 
@@ -318,12 +346,11 @@ export function WhiteboardPanel({
           {Math.round(scale * 100)}%
         </div>
 
-        {/* Diagram container with transform */}
-        <div 
+        {/* Diagram container — pan only, zoom is applied to SVG dimensions */}
+        <div
           className="flex h-full w-full items-center justify-center"
           style={{
-            transform: `translate(${panX}px, ${panY}px) scale(${scale})`,
-            transformOrigin: 'center center',
+            transform: `translate(${panX}px, ${panY}px)`,
             transition: isPanning ? 'none' : 'transform 0.1s ease-out'
           }}
         >
