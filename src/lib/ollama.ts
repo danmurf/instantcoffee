@@ -1,6 +1,6 @@
 // Ollama API client with streaming support for chat-to-diagram loop
 
-import type { OllamaMessage, StreamCallbacks } from '../types/chat';
+import type { OllamaMessage, OllamaTool, StreamCallbacks, ToolCall } from '../types/chat';
 
 /** Base URL for Ollama API */
 export const OLLAMA_BASE = 'http://localhost:11434';
@@ -103,6 +103,115 @@ export async function streamChat(
 
     callbacks.onComplete(fullResponse);
     return fullResponse;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      const timeoutError = new Error('Request timed out');
+      callbacks.onError(timeoutError);
+      throw timeoutError;
+    }
+    callbacks.onError(error instanceof Error ? error : new Error(String(error)));
+    throw error;
+  }
+}
+
+/**
+ * Result from streamChatWithTools containing content and any tool calls
+ */
+export interface StreamWithToolsResult {
+  /** Full content from the assistant */
+  content: string;
+  /** Tool calls made by the model (if any) */
+  toolCalls: ToolCall[];
+}
+
+/**
+ * Stream chat response from Ollama with tool support
+ * @param model - Model name to use
+ * @param messages - Array of messages for context
+ * @param tools - Array of available tools
+ * @param callbacks - Stream handling callbacks
+ * @returns Promise<StreamWithToolsResult> - Content and tool calls
+ */
+export async function streamChatWithTools(
+  model: string,
+  messages: OllamaMessage[],
+  tools: OllamaTool[],
+  callbacks: StreamCallbacks
+): Promise<StreamWithToolsResult> {
+  const abortController = new AbortController();
+  let fullResponse = '';
+  let toolCalls: ToolCall[] = [];
+
+  try {
+    const response = await fetch(`${OLLAMA_BASE}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        tools,
+        stream: true,
+      }),
+      signal: abortController.signal,
+    });
+
+    if (!response.ok) {
+      const error = new Error(`Ollama API error: ${response.status} ${response.statusText}`);
+      callbacks.onError(error);
+      throw error;
+    }
+
+    if (!response.body) {
+      const error = new Error('No response body from Ollama');
+      callbacks.onError(error);
+      throw error;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
+      }
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter((line) => line.trim() !== '');
+
+      for (const line of lines) {
+        try {
+          const data = JSON.parse(line);
+          
+          // Extract content
+          const content = data.message?.content;
+          if (content) {
+            fullResponse += content;
+            callbacks.onChunk(content);
+          }
+          
+          // Extract tool calls
+          if (data.message?.tool_calls && Array.isArray(data.message.tool_calls)) {
+            for (const tc of data.message.tool_calls) {
+              toolCalls.push({
+                name: tc.function?.name || '',
+                arguments: typeof tc.function?.arguments === 'string' 
+                  ? tc.function.arguments 
+                  : JSON.stringify(tc.function?.arguments || {}),
+              });
+            }
+          }
+        } catch {
+          // Skip invalid JSON lines
+        }
+      }
+    }
+
+    callbacks.onComplete(fullResponse);
+    return { content: fullResponse, toolCalls };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
       const timeoutError = new Error('Request timed out');
