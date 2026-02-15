@@ -5,12 +5,34 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import type { ChatMessage, MessageRole, OllamaMessage, StreamCallbacks } from '../types/chat';
-import { streamChat, extractMermaidCode, formatError, DEFAULT_MODEL } from '../lib/ollama';
+import type { ChatMessage, MessageRole, OllamaMessage, OllamaTool, StreamCallbacks, ToolCall } from '../types/chat';
+import { streamChatWithTools, extractMermaidCode, formatError, DEFAULT_MODEL } from '../lib/ollama';
 import { renderMermaid } from '../lib/mermaid';
 
 const MAX_MESSAGES = 20;
 const STREAM_DEBOUNCE_MS = 500;
+
+/**
+ * Tool definition for updating Mermaid diagrams
+ * Allows the LLM to decide when to update the diagram
+ */
+export const diagramTool: OllamaTool = {
+  type: 'function',
+  function: {
+    name: 'update_diagram',
+    description: 'Update the Mermaid diagram with new content. Use this when the user wants to create or modify a diagram. If the user is just asking a question without requesting a diagram change, do NOT call this tool.',
+    parameters: {
+      type: 'object',
+      properties: {
+        mermaid_code: {
+          type: 'string',
+          description: 'The complete Mermaid diagram code to render',
+        },
+      },
+      required: ['mermaid_code'],
+    },
+  },
+};
 
 const SYSTEM_PROMPT = `You are a Mermaid diagram generation assistant. Your role is to help users create diagrams by generating Mermaid code based on their descriptions.
 
@@ -22,6 +44,12 @@ You can generate the following types of diagrams:
 - Class diagrams
 - State diagrams
 - Pie charts
+
+TOOL USE:
+- Use the 'update_diagram' tool when the user wants to create or modify a Mermaid diagram
+- Do NOT use the tool if the user is just asking a question, making small talk, or not requesting any diagram changes
+- When using the tool, provide the COMPLETE updated diagram code, not just the changes
+- After using the tool, you can provide additional text explanation to the user
 
 ITERATIVE REFINEMENT:
 When user requests changes to an existing diagram (e.g., 'add a node', 'make it bigger', 'change color to blue', 'move the arrow'), you must MODIFY the CURRENT DIAGRAM below, not create a new one from scratch.
@@ -121,6 +149,7 @@ export function useChat() {
           streamingContentRef.current += chunk;
           setStreamingContent(streamingContentRef.current);
           
+          // Only extract from text if no tool call happened (fallback behavior)
           const { mermaidCode } = extractMermaidCode(streamingContentRef.current);
           
           if (mermaidCode && mermaidCode !== partialMermaidRef.current) {
@@ -179,7 +208,13 @@ export function useChat() {
         },
       };
 
-      await streamChat(DEFAULT_MODEL, apiMessages, callbacks);
+      // Use streamChatWithTools to enable tool calling
+      const result = await streamChatWithTools(DEFAULT_MODEL, apiMessages, [diagramTool], callbacks);
+      
+      // Handle tool calls if the model used them
+      if (result.toolCalls && result.toolCalls.length > 0) {
+        await handleToolCalls(result.toolCalls, apiMessages, callbacks);
+      }
 
     } catch (err) {
       const formattedError = formatError(err);
@@ -188,6 +223,59 @@ export function useChat() {
       setIsGenerating(false);
     }
   }, [messages, toOllamaMessages]);
+
+  /**
+   * Handle tool calls from the LLM
+   * Renders the diagram and sends tool result back to continue the conversation
+   */
+  const handleToolCalls = useCallback(async (
+    toolCalls: ToolCall[],
+    existingMessages: OllamaMessage[],
+    callbacks: StreamCallbacks
+  ): Promise<void> => {
+    for (const toolCall of toolCalls) {
+      if (toolCall.name === 'update_diagram') {
+        let mermaidCode = '';
+        
+        try {
+          // Parse the arguments JSON
+          const args = JSON.parse(toolCall.arguments);
+          mermaidCode = args.mermaid_code || '';
+        } catch {
+          console.error('Failed to parse tool arguments:', toolCall.arguments);
+          mermaidCode = '';
+        }
+
+        if (mermaidCode) {
+          setIsDiagramUpdating(true);
+          
+          try {
+            const svg = await renderMermaid(mermaidCode);
+            setCurrentMermaid(mermaidCode);
+            setCurrentSvg(svg);
+            
+            // Send tool result back to the model to continue conversation
+            const toolResultMessage: OllamaMessage = {
+              role: 'tool',
+              content: JSON.stringify({ success: true, mermaid_code: mermaidCode }),
+              tool_name: 'update_diagram',
+            };
+
+            // Continue conversation with tool result
+            const continuedMessages = [...existingMessages, toolResultMessage];
+            
+            await streamChatWithTools(DEFAULT_MODEL, continuedMessages, [diagramTool], callbacks);
+            
+          } catch (renderErr) {
+            console.error('Failed to render diagram from tool call:', renderErr);
+            callbacks.onError(renderErr instanceof Error ? renderErr : new Error(String(renderErr)));
+          } finally {
+            setIsDiagramUpdating(false);
+          }
+        }
+      }
+    }
+  }, []);
 
   return {
     messages,

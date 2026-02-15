@@ -3,7 +3,7 @@
 /**
  * Role of a message sender in the chat conversation
  */
-export type MessageRole = 'user' | 'assistant' | 'system';
+export type MessageRole = 'user' | 'assistant' | 'system' | 'tool';
 
 /**
  * A chat message in the application
