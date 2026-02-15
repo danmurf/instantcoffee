@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useMemories } from '../hooks/useMemories';
+import { consolidateMemories } from '../lib/memoryConsolidation';
+import { MemoryConsolidationModal } from './MemoryConsolidationModal';
 
 export function MemoryPanel() {
   const { memories, addMemory, editMemory, removeMemory, isLoading } = useMemories();
@@ -7,6 +9,7 @@ export function MemoryPanel() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formContent, setFormContent] = useState('');
+  const [isConsolidating, setIsConsolidating] = useState(false);
 
   const resetForm = () => {
     setFormContent('');
@@ -39,6 +42,29 @@ export function MemoryPanel() {
     setIsAdding(false);
   };
 
+  const handleConsolidate = async () => {
+    if (memories.length === 0) return;
+
+    const message = memories.length > 30
+      ? `This will consolidate ${memories.length} memories. This may take 1-2 minutes with large amounts of data.\n\nThe process will remove duplicates and contradictions. Continue?`
+      : 'This will consolidate all memories, removing duplicates and contradictions. Continue?';
+
+    const confirmed = window.confirm(message);
+    if (!confirmed) return;
+
+    setIsConsolidating(true);
+    try {
+      await consolidateMemories(memories, addMemory, removeMemory);
+      alert('Memories successfully consolidated!');
+    } catch (error) {
+      console.error('Failed to consolidate memories:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to consolidate memories:\n\n${errorMessage}\n\nCheck the browser console for more details.`);
+    } finally {
+      setIsConsolidating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-4 text-gray-400 text-sm">
@@ -48,16 +74,28 @@ export function MemoryPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <>
+      <MemoryConsolidationModal isOpen={isConsolidating} memoryCount={memories.length} />
+      <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700">
         <h3 className="text-sm font-medium text-gray-200">Memories</h3>
-        <button
-          onClick={() => { setFormContent(''); setEditingId(null); setIsAdding(true); }}
-          className="text-xs px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
-        >
-          Add
-        </button>
+        <div className="flex gap-1">
+          <button
+            onClick={handleConsolidate}
+            disabled={isConsolidating || memories.length === 0}
+            title="Consolidate and clean up memories"
+            className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isConsolidating ? 'Cleaning...' : 'Cleanup'}
+          </button>
+          <button
+            onClick={() => { setFormContent(''); setEditingId(null); setIsAdding(true); }}
+            className="text-xs px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
+          >
+            Add
+          </button>
+        </div>
       </div>
 
       {/* Add/Edit Form */}
@@ -133,5 +171,6 @@ export function MemoryPanel() {
         )}
       </div>
     </div>
+    </>
   );
 }

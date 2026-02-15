@@ -8,6 +8,7 @@ interface SessionSidebarProps {
   onSelectSession: (id: number) => void;
   onNewSession: () => void;
   onDeleteSession: (id: number) => void;
+  onRenameSession: (id: number, newName: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   memoryEnabled: boolean;
@@ -43,6 +44,7 @@ export function SessionSidebar({
   onSelectSession,
   onNewSession,
   onDeleteSession,
+  onRenameSession,
   isCollapsed,
   onToggleCollapse,
   memoryEnabled,
@@ -51,15 +53,47 @@ export function SessionSidebar({
   onMemorySavingEnabledChange,
 }: SessionSidebarProps) {
   const [showMemories, setShowMemories] = useState(false);
+  const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
   
   const handleSessionClick = (id: number) => {
-    onSelectSession(id);
+    if (editingSessionId !== id) {
+      onSelectSession(id);
+    }
   };
-  
+
   const handleDelete = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm('Delete this session? This cannot be undone.')) {
       onDeleteSession(id);
+    }
+  };
+
+  const handleStartEdit = (id: number, currentName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingSessionId(id);
+    setEditingName(currentName);
+  };
+
+  const handleFinishEdit = (id: number) => {
+    const trimmedName = editingName.trim();
+    if (trimmedName && trimmedName !== sessions.find(s => s.id === id)?.name) {
+      onRenameSession(id, trimmedName);
+    }
+    setEditingSessionId(null);
+    setEditingName('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingSessionId(null);
+    setEditingName('');
+  };
+
+  const handleKeyDown = (id: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleFinishEdit(id);
+    } else if (e.key === 'Escape') {
+      handleCancelEdit();
     }
   };
   
@@ -89,7 +123,7 @@ export function SessionSidebar({
   }
   
   return (
-    <div className="w-60 flex-shrink-0 bg-gray-900 flex flex-col border-r border-gray-700">
+    <div className="w-72 flex-shrink-0 bg-gray-900 flex flex-col border-r border-gray-700">
       {/* Top bar */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700">
         <button
@@ -130,24 +164,53 @@ export function SessionSidebar({
                     : 'hover:bg-gray-800 border-l-2 border-transparent'
                 }`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0 pr-2">
-                    <p className="text-sm font-medium text-gray-200 truncate">
-                      {session.name}
-                    </p>
+                <div className="flex items-start justify-between gap-1">
+                  <div className="flex-1 min-w-0 pr-1">
+                    {editingSessionId === session.id ? (
+                      <input
+                        type="text"
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={() => handleFinishEdit(session.id!)}
+                        onKeyDown={(e) => handleKeyDown(session.id!, e)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-full px-1 py-0.5 text-sm font-medium text-gray-200 bg-gray-800 border border-indigo-500 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        autoFocus
+                      />
+                    ) : (
+                      <p
+                        className="text-sm font-medium text-gray-200 truncate"
+                        title={session.name}
+                      >
+                        {session.name}
+                      </p>
+                    )}
                     <p className="text-xs text-gray-500">
                       {formatRelativeTime(session.updatedAt)}
                     </p>
                   </div>
-                  <button
-                    onClick={(e) => handleDelete(session.id!, e)}
-                    className="p-1 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Delete session"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {editingSessionId !== session.id && (
+                      <button
+                        onClick={(e) => handleStartEdit(session.id!, session.name, e)}
+                        className="p-1 text-gray-500 hover:text-indigo-400"
+                        title="Rename session"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => handleDelete(session.id!, e)}
+                      className="p-1 text-gray-500 hover:text-red-400"
+                      title="Delete session"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

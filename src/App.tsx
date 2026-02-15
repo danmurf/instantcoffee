@@ -9,7 +9,7 @@ import { useChat } from './hooks/useChat';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useSessions } from './hooks/useSessions';
 import { useSessionStore } from './stores/sessionStore';
-import { loadSession, deleteSession } from './db/sessions';
+import { loadSession, deleteSession, renameSession } from './db/sessions';
 import type { SessionState } from './types/session';
 
 initMermaid();
@@ -255,6 +255,11 @@ function App() {
     }
   }, [currentSessionId]);
 
+  // Handle session rename
+  const handleRenameSession = useCallback(async (sessionId: number, newName: string) => {
+    await renameSession(sessionId, newName);
+  }, []);
+
   // Handle new session - saves current and starts fresh
   const handleNewSession = useCallback(async () => {
     chat.cancelGeneration();
@@ -290,6 +295,7 @@ function App() {
             onSelectSession={handleSelectSession}
             onNewSession={handleNewSession}
             onDeleteSession={handleDeleteSession}
+            onRenameSession={handleRenameSession}
             isCollapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
             memoryEnabled={chat.memoryEnabled}
