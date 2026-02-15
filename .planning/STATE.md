@@ -2,8 +2,8 @@
 
 **Project:** Instant Coffee  
 **Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning diagram syntax.  
-**Current Phase:** 05-persistence-semantic-memory  
-**Current Plan:** None
+**Current Phase:** 04-switch-from-d2-to-mermaid  
+**Current Plan:** Complete
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Attribute | Value |
 | -------- | ------- |
-| **Phase** | 05-persistence-semantic-memory |
-| **Plan** | None |
+| **Phase** | 04-switch-from-d2-to-mermaid |
+| **Plan** | Complete |
 | **Status** | Ready to plan |
 | **Progress Bar** | [====================] 10/10 plans (100%) |
 
