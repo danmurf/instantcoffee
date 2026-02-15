@@ -2,8 +2,8 @@
 
 **Project:** Instant Coffee  
 **Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning diagram syntax.  
-**Current Phase:** 04-switch-from-d2-to-mermaid  
-**Current Plan:** 04-02 (Complete)
+**Current Phase:** 06-use-llm-tool-calling-for-diagram-updates  
+**Current Plan:** None
 
 ---
 
@@ -11,10 +11,10 @@
 
 | Attribute | Value |
 | -------- | ------- |
-| **Phase** | 04-switch-from-d2-to-mermaid |
-| **Plan** | 04-02 (Complete) |
-| **Status** | Complete |
-| **Progress Bar** | [==========] 100% (2 of 2 plans complete) |
+| **Phase** | 06-use-llm-tool-calling-for-diagram-updates |
+| **Plan** | 01 |
+| **Status** | Completed |
+| **Progress Bar** | [======....] 50% (1 of 2 plans complete) |
 
 ---
 
@@ -71,6 +71,13 @@ Users can create accurate Mermaid diagrams by describing what they want in natur
 - **Goal:** Users can save work and teach system about infrastructure
 - **Requirements:** SAVE-03, SAVE-04, MEMO-01, MEMO-02, MEMO-03 (5)
 - **Success Criteria:** 5 observable behaviors
+- **Plans:** Not started
+
+### Phase 6: LLM Tool Calling for Diagram Updates
+- **Goal:** Enable LLM to update diagrams via tool calling
+- **Requirements:** Tool calling for intelligent diagram updates
+- **Success Criteria:** LLM can use update_diagram tool
+- **Plans:** 06-01 (done) ✓, 06-02 (pending)
 
 ---
 
@@ -93,8 +100,12 @@ Users can create accurate Mermaid diagrams by describing what they want in natur
 - **Phase 4:** Updated system prompt to generate Mermaid instead of D2
 
 ### Roadmap Evolution
+- Phase 6 added: Use LLM tool calling for diagram updates
 - Phase 5 added: Switch from D2 to Mermaid
 - Phases 4 & 5 swapped: Mermaid switch moved to Phase 4, Persistence moved to Phase 5
+
+### Phase 6: LLM Tool Calling (Current)
+- **06-01:** Tool calling implementation with update_diagram tool
 
 ### Research Flags (for planning phases)
 - **Phase 2:** Prompt engineering for Mermaid generation needs iteration
@@ -127,8 +138,8 @@ Users can create accurate Mermaid diagrams by describing what they want in natur
 ## Session Continuity
 
 **Last Updated:** 2026-02-15  
-**Phase Status:** Phase 4 complete (2 of 2 plans executed)  
-**Next Step:** Plan Phase 5 (Persistence & Semantic Memory)
+**Phase Status:** Phase 6 in progress (1 of 2 plans executed)  
+**Next Step:** Execute 06-02 or plan next phase
 
 ---
 
