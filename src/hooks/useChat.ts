@@ -6,52 +6,46 @@
 
 import { useState, useCallback, useRef } from 'react';
 import type { ChatMessage, MessageRole, OllamaMessage, StreamCallbacks } from '../types/chat';
-import { streamChat, extractD2Code, formatError, DEFAULT_MODEL } from '../lib/ollama';
-import { renderD2 } from '../lib/d2';
+import { streamChat, extractMermaidCode, formatError, DEFAULT_MODEL } from '../lib/ollama';
+import { renderMermaid } from '../lib/mermaid';
 
 const MAX_MESSAGES = 20;
 const STREAM_DEBOUNCE_MS = 500;
 
-/**
- * System prompt for the D2 diagram generation assistant
- * Supports both initial diagram creation and iterative refinement
- */
-const SYSTEM_PROMPT = `You are a D2 diagram generation assistant. Your role is to help users create diagrams by generating D2 code based on their descriptions.
+const SYSTEM_PROMPT = `You are a Mermaid diagram generation assistant. Your role is to help users create diagrams by generating Mermaid code based on their descriptions.
 
 You can generate the following types of diagrams:
 - Sequence diagrams (showing interactions between actors/components)
 - ERD (Entity-Relationship Diagrams)
 - Flowcharts (process flows, decision trees)
 - Architecture diagrams (system components, data flow)
+- Class diagrams
+- State diagrams
+- Pie charts
 
 ITERATIVE REFINEMENT:
 When user requests changes to an existing diagram (e.g., 'add a node', 'make it bigger', 'change color to blue', 'move the arrow'), you must MODIFY the CURRENT DIAGRAM below, not create a new one from scratch.
 
 Examples of iterative changes:
-- "add a user approval step" → Add new shape connected to existing flow
+- "add a user approval step" → Add new node connected to existing flow
 - "make the arrows thicker" → Add style attribute to connections
-- "change the color of server to red" → Modify shape style
-- "add another database" → Add new shape and connection
+- "change the color of server to red" → Modify node style
+- "add another database" → Add new node and connection
 
-CRITICAL: Always output ONLY the modified D2 code. Do NOT explain what changed. The user wants to see the result, not a description of changes.
+CRITICAL: Always output ONLY the modified Mermaid code. Do NOT explain what changed. The user wants to see the result, not a description of changes.
 
 When generating diagrams:
-1. Use proper D2 syntax: https://d2lang.com/tour/intro
-2. Always wrap D2 code in markdown code blocks with the 'd2' language identifier
+1. Use proper Mermaid syntax: https://mermaid.js.org/intro/
+2. Always wrap Mermaid code in markdown code blocks with the 'mermaid' language identifier
 3. Keep diagrams clear and readable
-4. NEVER add brackets [ or ] after connection labels (e.g., do NOT do: "label" [style])
-5. Use proper connection syntax: source -> target: "label" (no brackets after the label)
 
 Format your response like this:
-\`\`\`d2
-# Your D2 code here
+\`\`\`mermaid
+# Your Mermaid code here
 \`\`\`
 
-If the user asks to modify an existing diagram, output the complete modified D2 code (not just the changes).`;
+If the user asks to modify an existing diagram, output the complete modified Mermaid code (not just the changes).`;
 
-/**
- * Create a new chat message
- */
 function createMessage(role: MessageRole, content: string): ChatMessage {
   return {
     id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
@@ -61,49 +55,37 @@ function createMessage(role: MessageRole, content: string): ChatMessage {
   };
 }
 
-/**
- * Hook for managing chat state and AI-powered diagram generation
- */
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [currentD2, setCurrentD2] = useState<string>('');
+  const [currentMermaid, setCurrentMermaid] = useState<string>('');
   const [currentSvg, setCurrentSvg] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Streaming state for real-time diagram updates (exposed for UI)
   const [_streamingContent, setStreamingContent] = useState<string>('');
-  const [_partialD2, setPartialD2] = useState<string>('');
+  const [_partialMermaid, setPartialMermaid] = useState<string>('');
   const [isDiagramUpdating, setIsDiagramUpdating] = useState<boolean>(false);
   
-  // Refs for streaming - avoid stale closures
   const streamingContentRef = useRef<string>('');
   const lastRenderTimeRef = useRef<number>(0);
-  const partialD2Ref = useRef<string>('');
+  const partialMermaidRef = useRef<string>('');
 
-  /**
-   * Convert chat messages to Ollama message format
-   * Includes current D2 for iterative refinement
-   */
   const toOllamaMessages = useCallback((history: ChatMessage[], userContent: string): OllamaMessage[] => {
     let systemContent = SYSTEM_PROMPT;
 
-    // Add current D2 to system prompt if available for iterative refinement
-    if (currentD2) {
-      systemContent += `\n\nCURRENT DIAGRAM:\n\`\`\`d2\n${currentD2}\n\`\`\``;
+    if (currentMermaid) {
+      systemContent += `\n\nCURRENT DIAGRAM:\n\`\`\`mermaid\n${currentMermaid}\n\`\`\``;
     }
 
     const ollamaMessages: OllamaMessage[] = [
       { role: 'system', content: systemContent }
     ];
 
-    // Add conversation history (truncated if too long)
     const recentMessages = history.slice(-MAX_MESSAGES);
     
     for (const msg of recentMessages) {
-      // Include D2 source from previous assistant messages if available
-      const content = msg.d2Source 
-        ? `${msg.content}\n\n[Previous diagram for reference:\n\`\`\`d2\n${msg.d2Source}\n\`\`\`]`
+      const content = msg.mermaidSource 
+        ? `${msg.content}\n\n[Previous diagram for reference:\n\`\`\`mermaid\n${msg.mermaidSource}\n\`\`\`]`
         : msg.content;
       
       ollamaMessages.push({
@@ -112,65 +94,49 @@ export function useChat() {
       });
     }
 
-    // Add the new user message
     ollamaMessages.push({ role: 'user', content: userContent });
 
     return ollamaMessages;
-  }, [currentD2]);
+  }, [currentMermaid]);
 
-  /**
-   * Send a message to the AI and handle the response
-   */
   const sendMessage = useCallback(async (content: string) => {
     const trimmedContent = content.trim();
     if (!trimmedContent) return;
 
-    // Clear any previous error
     setError(null);
-    
-    // Set generating state
     setIsGenerating(true);
 
-    // Add user message immediately
     const userMessage = createMessage('user', trimmedContent);
     setMessages(prev => [...prev, userMessage]);
 
-    // Reset streaming refs for new request
     streamingContentRef.current = '';
-    partialD2Ref.current = '';
+    partialMermaidRef.current = '';
     lastRenderTimeRef.current = 0;
 
     try {
-      // Build API messages
       const apiMessages = toOllamaMessages(messages, trimmedContent);
 
-      // Set up streaming callbacks
       const callbacks: StreamCallbacks = {
         onChunk: async (chunk: string) => {
-          // Accumulate streaming content using ref to avoid stale closure
           streamingContentRef.current += chunk;
           setStreamingContent(streamingContentRef.current);
           
-          // Extract D2 from accumulated content
-          const { d2Code } = extractD2Code(streamingContentRef.current);
+          const { mermaidCode } = extractMermaidCode(streamingContentRef.current);
           
-          if (d2Code && d2Code !== partialD2Ref.current) {
-            // Check debounce - skip if we rendered too recently
+          if (mermaidCode && mermaidCode !== partialMermaidRef.current) {
             const now = Date.now();
             if (now - lastRenderTimeRef.current >= STREAM_DEBOUNCE_MS) {
               lastRenderTimeRef.current = now;
-              partialD2Ref.current = d2Code;
+              partialMermaidRef.current = mermaidCode;
               setIsDiagramUpdating(true);
-              setPartialD2(d2Code);
+              setPartialMermaid(mermaidCode);
               
               try {
-                // Try to render partial D2 - if it fails, keep previous valid diagram
-                const svg = await renderD2(d2Code);
-                setCurrentD2(d2Code);
+                const svg = await renderMermaid(mermaidCode);
+                setCurrentMermaid(mermaidCode);
                 setCurrentSvg(svg);
               } catch (renderErr) {
-                // If partial D2 fails to render, keep previous valid diagram
-                console.warn('Partial D2 render failed, keeping previous diagram:', renderErr);
+                console.warn('Partial Mermaid render failed, keeping previous diagram:', renderErr);
               } finally {
                 setIsDiagramUpdating(false);
               }
@@ -178,34 +144,29 @@ export function useChat() {
           }
         },
         onComplete: async (fullResponse: string) => {
-          // Clear streaming state
           streamingContentRef.current = '';
-          partialD2Ref.current = '';
+          partialMermaidRef.current = '';
           setStreamingContent('');
-          setPartialD2('');
+          setPartialMermaid('');
           setIsDiagramUpdating(false);
           
-          // Extract D2 code from response
-          const { explanation, d2Code } = extractD2Code(fullResponse);
+          const { explanation, mermaidCode } = extractMermaidCode(fullResponse);
           
-          // Create assistant message
           let assistantContent = explanation || fullResponse;
-          if (!d2Code) {
-            assistantContent += '\n\n⚠️ No D2 code was detected in my response. Please try describing the diagram differently.';
+          if (!mermaidCode) {
+            assistantContent += '\n\n⚠️ No Mermaid code was detected in my response. Please try describing the diagram differently.';
           }
 
           const assistantMessage = createMessage('assistant', assistantContent);
           
-          // If D2 was extracted, render it and update state
-          if (d2Code) {
+          if (mermaidCode) {
             try {
-              const svg = await renderD2(d2Code);
-              setCurrentD2(d2Code);
+              const svg = await renderMermaid(mermaidCode);
+              setCurrentMermaid(mermaidCode);
               setCurrentSvg(svg);
-              // Attach D2 source to message for potential future use
-              assistantMessage.d2Source = d2Code;
+              assistantMessage.mermaidSource = mermaidCode;
             } catch (renderErr) {
-              console.error('Failed to render D2:', renderErr);
+              console.error('Failed to render Mermaid:', renderErr);
               assistantContent += '\n\n⚠️ Diagram generated but rendering failed.';
             }
           }
@@ -218,11 +179,9 @@ export function useChat() {
         },
       };
 
-      // Call Ollama API
       await streamChat(DEFAULT_MODEL, apiMessages, callbacks);
 
     } catch (err) {
-      // Handle any errors not caught by the stream
       const formattedError = formatError(err);
       setError(formattedError);
     } finally {
@@ -232,14 +191,13 @@ export function useChat() {
 
   return {
     messages,
-    currentD2,
+    currentMermaid,
     currentSvg,
     isGenerating,
     error,
     sendMessage,
-    // Streaming state for real-time updates
     isDiagramUpdating,
     streamingContent: _streamingContent,
-    partialD2: _partialD2,
+    partialMermaid: _partialMermaid,
   };
 }

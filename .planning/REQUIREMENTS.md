@@ -1,15 +1,15 @@
 # Requirements: Instant Coffee
 
 **Defined:** 2026-02-14
-**Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning D2 syntax.
+**Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning diagram syntax.
 
 ## v1 Requirements
 
 ### Core Experience
 
 - [ ] **CORE-01**: User can type natural language in chat to request diagrams
-- [ ] **CORE-02**: System sends chat to Ollama and receives D2 syntax response
-- [ ] **CORE-03**: System renders D2 as SVG in the whiteboard area
+- [ ] **CORE-02**: System sends chat to Ollama and receives Mermaid syntax response
+- [ ] **CORE-03**: System renders Mermaid as SVG in the whiteboard area
 - [ ] **CORE-04**: Diagram updates in real-time as AI generates response
 - [ ] **CORE-05**: System handles Ollama unavailability gracefully with clear error message
 
@@ -24,7 +24,7 @@
 
 - [ ] **ITER-01**: User can request iterative changes ("make it bigger", "add a node")
 - [ ] **ITER-02**: System maintains conversation context for iterative refinement
-- [ ] **EDIT-01**: User can view and manually edit generated D2 source
+- [ ] **EDIT-01**: User can view and manually edit generated Mermaid source
 - [ ] **EDIT-02**: Manual edits re-render immediately in whiteboard
 
 ### Navigation & Controls

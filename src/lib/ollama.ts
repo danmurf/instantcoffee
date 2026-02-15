@@ -115,6 +115,30 @@ export async function streamChat(
 }
 
 /**
+ * Extract Mermaid code from an AI response
+ * Looks for markdown code blocks with 'mermaid' language identifier
+ * @param response - Full AI response text
+ * @returns Object with explanation and extracted Mermaid code
+ */
+export function extractMermaidCode(
+  response: string
+): { explanation: string; mermaidCode: string } {
+  const mermaidBlockMatch = response.match(/```mermaid\n([\s\S]*?)```/);
+
+  if (mermaidBlockMatch) {
+    const mermaidCode = mermaidBlockMatch[1];
+    const explanation = response.replace(mermaidBlockMatch[0], '').trim();
+    return { explanation, mermaidCode };
+  }
+
+  if (response.includes('-->') || response.includes('flowchart') || response.includes('sequenceDiagram')) {
+    return { explanation: '', mermaidCode: response };
+  }
+
+  return { explanation: response, mermaidCode: '' };
+}
+
+/**
  * Extract D2 code from an AI response
  * Looks for markdown code blocks with 'd2' language identifier
  * @param response - Full AI response text

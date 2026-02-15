@@ -84,7 +84,7 @@ export function ChatPanel({ messages, isGenerating, error, onSendMessage }: Chat
               Welcome to Instant Coffee
             </h3>
             <p className="mb-6 max-w-xs text-sm text-gray-500">
-              Describe what you want to diagram, and I'll generate it using D2.
+              Describe what you want to diagram, and I'll generate it using Mermaid.
             </p>
             <div className="space-y-2">
               <p className="text-xs font-medium uppercase tracking-wide text-gray-400">

@@ -119,11 +119,13 @@ This roadmap delivers a local-first conversational diagram generator using D2 an
 
 **Depends on:** Phase 3
 
+**Status:** ✓ Complete (2026-02-15)
+
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Core rendering swap (Mermaid lib, code extraction, useChat)
-- [ ] 04-02-PLAN.md — UI updates, backend removal, config cleanup
+- [x] 04-01-PLAN.md — Core rendering swap (Mermaid lib, code extraction, useChat)
+- [x] 04-02-PLAN.md — UI updates, backend removal, config cleanup
 
 ---
 
@@ -162,7 +164,7 @@ Plans:
 | 1 | Foundation & Rendering Pipeline | 4 | ✓ Complete |
 | 2 | Core Chat-to-Diagram Loop | 10 | ✓ Complete |
 | 3 | Editing & Polish | 8 | ✓ Complete |
-| 4 | Switch from D2 to Mermaid | N/A (infra) | Planned (2 plans) |
+| 4 | Switch from D2 to Mermaid | N/A (infra) | ✓ Complete |
 | 5 | Persistence & Semantic Memory | 5 | Planned (3 plans) |
 
 ---

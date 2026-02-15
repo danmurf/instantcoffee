@@ -15,8 +15,8 @@ export interface ChatMessage {
   role: MessageRole;
   /** Content of the message */
   content: string;
-  /** Optional D2 source code extracted from the message */
-  d2Source?: string;
+  /** Optional Mermaid source code extracted from the message */
+  mermaidSource?: string;
   /** Unix timestamp when the message was created */
   timestamp: number;
 }

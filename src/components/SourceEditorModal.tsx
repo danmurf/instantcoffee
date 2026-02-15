@@ -1,62 +1,53 @@
 import { useState, useEffect, useRef } from 'react';
-import { renderD2 } from '../lib/d2';
+import { renderMermaid } from '../lib/mermaid';
 
 export interface SourceEditorModalProps {
-  /** Whether the modal is open */
   isOpen: boolean;
-  /** The current D2 source code */
-  d2Source: string;
-  /** Callback when user saves edited source */
+  mermaidSource: string;
   onSave: (newSource: string) => void;
-  /** Callback when user closes the modal */
   onClose: () => void;
 }
 
 export function SourceEditorModal({
   isOpen,
-  d2Source,
+  mermaidSource,
   onSave,
   onClose,
 }: SourceEditorModalProps) {
-  const [localSource, setLocalSource] = useState(d2Source);
+  const [localSource, setLocalSource] = useState(mermaidSource);
   const [previewSvg, setPreviewSvg] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Sync local state when d2Source changes from outside
   useEffect(() => {
     if (isOpen) {
-      setLocalSource(d2Source);
+      setLocalSource(mermaidSource);
       setPreviewSvg('');
       setPreviewError(null);
     }
-  }, [isOpen, d2Source]);
+  }, [isOpen, mermaidSource]);
 
-  // Focus textarea when modal opens
   useEffect(() => {
     if (isOpen && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [isOpen]);
 
-  // Debounced preview rendering
   useEffect(() => {
     if (!isOpen) return;
 
-    // Clear existing debounce timer
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
 
-    // Set new debounce timer for preview
     setIsUpdating(true);
     setPreviewError(null);
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const svg = await renderD2(localSource);
+        const svg = await renderMermaid(localSource);
         setPreviewSvg(svg);
       } catch (err) {
         setPreviewError(err instanceof Error ? err.message : 'Failed to render preview');
@@ -65,7 +56,6 @@ export function SourceEditorModal({
       }
     }, 300);
 
-    // Cleanup on unmount or when source changes
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
@@ -73,7 +63,6 @@ export function SourceEditorModal({
     };
   }, [isOpen, localSource]);
 
-  // Handle textarea changes
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setLocalSource(e.target.value);
   };
@@ -87,24 +76,20 @@ export function SourceEditorModal({
   };
 
   const handleClose = () => {
-    // Discard changes and close (per user decision in plan)
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50"
         onClick={handleClose}
       />
 
-      {/* Modal content */}
       <div className="relative z-10 mx-4 flex max-h-[80vh] w-full max-w-3xl flex-col rounded-lg bg-white shadow-xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-900">
-            Edit D2 Source
+            Edit Mermaid Source
           </h2>
           <button
             onClick={handleClose}
@@ -127,10 +112,8 @@ export function SourceEditorModal({
           </button>
         </div>
 
-        {/* Body - split view: editor + preview */}
         <div className="flex-1 overflow-auto p-6">
           <div className="grid grid-cols-2 gap-4">
-            {/* Editor pane */}
             <div className="relative">
               <h3 className="mb-2 text-sm font-medium text-gray-700">Source</h3>
               <textarea
@@ -138,10 +121,9 @@ export function SourceEditorModal({
                 value={localSource}
                 onChange={handleChange}
                 className="h-72 w-full resize-none font-mono text-sm bg-gray-50 p-3 text-gray-800 border border-gray-200 rounded-md focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="Enter D2 source code..."
+                placeholder="Enter Mermaid source code..."
                 spellCheck={false}
               />
-              {/* Preview updating indicator */}
               {isUpdating && (
                 <div className="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-indigo-100 px-2 py-1 text-xs text-indigo-700">
                   <div className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-300 border-t-indigo-600" />
@@ -150,7 +132,6 @@ export function SourceEditorModal({
               )}
             </div>
 
-            {/* Preview pane */}
             <div className="flex flex-col">
               <h3 className="mb-2 text-sm font-medium text-gray-700">Live Preview</h3>
               <div className="flex h-72 w-full items-center justify-center overflow-hidden rounded border border-gray-200 bg-gray-50">
@@ -176,7 +157,6 @@ export function SourceEditorModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between border-t border-gray-200 px-6 py-4">
           <button
             onClick={handleClose}

@@ -3,17 +3,17 @@ import { Layout } from './components/Layout';
 import { ChatPanel } from './components/ChatPanel';
 import { WhiteboardPanel } from './components/WhiteboardPanel';
 import { SourceEditorModal } from './components/SourceEditorModal';
-import { renderD2 } from './lib/d2';
+import { renderMermaid, initMermaid } from './lib/mermaid';
 import { useChat } from './hooks/useChat';
 
-const DEMO_D2 = `shape: rectangle
-hello -> world: says hello
-world: Hello, World!
+initMermaid();
 
-style {
-  fill: '#f0f9ff'
-  stroke: '#6366f1'
-}
+const DEMO_MERMAID = `flowchart TD
+    A[Hello] -->|says hello| B[World]
+    B --> C[Hello, World!]
+    style A fill:#f0f9ff,stroke:#6366f1
+    style B fill:#f0f9ff,stroke:#6366f1
+    style C fill:#f0f9ff,stroke:#6366f1
 `;
 
 function App() {
@@ -22,10 +22,10 @@ function App() {
   const [svg, setSvg] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [d2Source, setD2Source] = useState<string>(DEMO_D2);
+  const [mermaidSource, setMermaidSource] = useState<string>(DEMO_MERMAID);
   const [showEditor, setShowEditor] = useState<boolean>(false);
 
-  const [history, setHistory] = useState<string[]>([DEMO_D2]);
+  const [history, setHistory] = useState<string[]>([DEMO_MERMAID]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
 
   const canUndo = historyIndex > 0;
@@ -34,26 +34,26 @@ function App() {
   useEffect(() => {
     if (chat.currentSvg) {
       setSvg(chat.currentSvg);
-      if (chat.currentD2) {
-        setD2Source(chat.currentD2);
+      if (chat.currentMermaid) {
+        setMermaidSource(chat.currentMermaid);
         const newHistory = history.slice(0, historyIndex + 1);
-        newHistory.push(chat.currentD2);
+        newHistory.push(chat.currentMermaid);
         setHistory(newHistory);
         setHistoryIndex(newHistory.length - 1);
       }
     }
-  }, [chat.currentSvg, chat.currentD2]);
+  }, [chat.currentSvg, chat.currentMermaid]);
 
   const handleUndo = useCallback(() => {
     if (canUndo) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
       const previousSource = history[newIndex];
-      setD2Source(previousSource);
+      setMermaidSource(previousSource);
       
       setIsLoading(true);
       setError(null);
-      renderD2(previousSource)
+      renderMermaid(previousSource)
         .then(setSvg)
         .catch((err) => setError(err instanceof Error ? err.message : 'Failed to render diagram'))
         .finally(() => setIsLoading(false));
@@ -65,11 +65,11 @@ function App() {
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
       const nextSource = history[newIndex];
-      setD2Source(nextSource);
+      setMermaidSource(nextSource);
       
       setIsLoading(true);
       setError(null);
-      renderD2(nextSource)
+      renderMermaid(nextSource)
         .then(setSvg)
         .catch((err) => setError(err instanceof Error ? err.message : 'Failed to render diagram'))
         .finally(() => setIsLoading(false));
@@ -104,7 +104,7 @@ function App() {
       setError(null);
       
       try {
-        const renderedSvg = await renderD2(DEMO_D2);
+        const renderedSvg = await renderMermaid(DEMO_MERMAID);
         setSvg(renderedSvg);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to render demo');
@@ -122,13 +122,13 @@ function App() {
     
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
-    setD2Source(newSource);
+    setMermaidSource(newSource);
     setShowEditor(false);
     setIsLoading(true);
     setError(null);
 
     try {
-      const renderedSvg = await renderD2(newSource);
+      const renderedSvg = await renderMermaid(newSource);
       setSvg(renderedSvg);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to render diagram');
@@ -171,7 +171,7 @@ function App() {
       />
       <SourceEditorModal
         isOpen={showEditor}
-        d2Source={d2Source}
+        mermaidSource={mermaidSource}
         onSave={handleEditorSave}
         onClose={() => setShowEditor(false)}
       />

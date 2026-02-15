@@ -6,8 +6,8 @@ This file provides guidelines for agents working on this codebase.
 
 - **Project Name**: Instant Coffee
 - **Type**: Web Application (Vite + React + TypeScript)
-- **Description**: Instant diagram generator using D2 and Ollama
-- **Tech Stack**: React 18, TypeScript 5, Vite 6, Tailwind CSS 3, Express (backend)
+- **Description**: Instant diagram generator using Mermaid and Ollama
+- **Tech Stack**: React 18, TypeScript 5, Vite 6, Tailwind CSS 3
 
 ---
 
@@ -16,9 +16,7 @@ This file provides guidelines for agents working on this codebase.
 ### Development
 
 ```bash
-npm run dev          # Start both client and server
-npm run dev:client  # Start Vite dev server only (port 5173)
-npm run dev:server  # Start Express server only (port 3000)
+npm run dev          # Start Vite dev server (port 5173)
 ```
 
 ### Build & Preview
@@ -84,7 +82,7 @@ import { Layout } from 'components/Layout';
 import { ChatPanel } from 'components/ChatPanel';
 
 // Utils
-import { renderD2 } from 'lib/d2';
+import { renderMermaid } from 'lib/mermaid';
 import { api } from 'lib/api';
 ```
 
@@ -166,13 +164,12 @@ src/
 │   ├── ChatPanel.tsx
 │   └── WhiteboardPanel.tsx
 ├── lib/            # Utilities and libraries
-│   └── d2.ts
+│   └── mermaid.ts
+├── hooks/          # Custom React hooks
+├── types/          # TypeScript types
 ├── App.tsx         # Root component
 ├── main.tsx        # Entry point
 └── index.css       # Global styles
-
-server/
-└── index.js        # Express backend
 
 dist/               # Production build output (gitignored)
 ```
