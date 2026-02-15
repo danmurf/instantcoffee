@@ -19,6 +19,23 @@ Open http://localhost:5173 in your browser.
 
 - [Ollama](https://ollama.com/) running locally with a model installed
 
+#### Installing Ollama
+
+1. Download and install Ollama from [ollama.com](https://ollama.com/)
+2. Pull the required model:
+
+```bash
+ollama pull gpt-oss:20b
+```
+
+3. Start Ollama:
+
+```bash
+ollama serve
+```
+
+The model will be used automatically by the application.
+
 ## Features
 
 - Natural language to diagram conversion via Ollama
