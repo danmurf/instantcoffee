@@ -138,7 +138,7 @@ export function ChatPanel({ messages, isGenerating, error, onSendMessage }: Chat
       </div>
 
       <div className="border-t border-gray-200 p-4">
-        <form onSubmit={handleSubmit} className="flex items-end gap-2">
+        <form onSubmit={handleSubmit} className="flex items-start gap-2">
           <div className="flex-1">
             <textarea
               ref={textareaRef}
@@ -153,7 +153,7 @@ export function ChatPanel({ messages, isGenerating, error, onSendMessage }: Chat
           <button
             type="submit"
             disabled={!input.trim() || isGenerating}
-            className="flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-[36px] items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
