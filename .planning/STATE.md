@@ -2,7 +2,7 @@
 
 **Project:** Instant Coffee  
 **Core Value:** Users can instantly create accurate diagrams by describing what they want in natural language, without learning diagram syntax.  
-**Current Phase:** 04-switch-from-d2-to-mermaid  
+**Current Phase:** 05-persistence-semantic-memory  
 **Current Plan:** Complete
 
 ---
@@ -11,10 +11,10 @@
 
 | Attribute | Value |
 | -------- | ------- |
-| **Phase** | 04-switch-from-d2-to-mermaid |
+| **Phase** | 05-persistence-semantic-memory |
 | **Plan** | Complete |
-| **Status** | Ready to plan |
-| **Progress Bar** | [====================] 10/10 plans (100%) |
+| **Status** | Ready for next phase |
+| **Progress Bar** | [====================] 3/3 plans (100%) |
 
 ---
 
@@ -71,7 +71,7 @@ Users can create accurate Mermaid diagrams by describing what they want in natur
 - **Goal:** Users can save work and teach system about infrastructure
 - **Requirements:** SAVE-03, SAVE-04, MEMO-01, MEMO-02, MEMO-03 (5)
 - **Success Criteria:** 5 observable behaviors
-- **Plans:** Not started
+- **Plans:** 05-01 (done) ✓, 05-02 (done) ✓, 05-03 (done) ✓ COMPLETE
 
 ### Phase 6: LLM Tool Calling for Diagram Updates
 - **Goal:** Enable LLM to update diagrams via tool calling
@@ -98,14 +98,20 @@ Users can create accurate Mermaid diagrams by describing what they want in natur
 - **Phase 4:** Migrated from D2 to Mermaid for client-side rendering
 - **Phase 4:** Removed Express backend entirely
 - **Phase 4:** Updated system prompt to generate Mermaid instead of D2
+- **Phase 5:** Implemented session persistence with Dexie.js and semantic memory with natural language commands
+- **Phase 5:** Added collapsible sidebar with session list, auto-save with 1500ms debounce
+- **Phase 5:** Added memory panel with CRUD and chat-based remember/forget/update commands
+- **Phase 5:** Injected all memories into system prompts for AI context
 
 ### Roadmap Evolution
 - Phase 6 added: Use LLM tool calling for diagram updates
 - Phase 5 added: Switch from D2 to Mermaid
 - Phases 4 & 5 swapped: Mermaid switch moved to Phase 4, Persistence moved to Phase 5
 
-### Phase 6: LLM Tool Calling (Current)
-- **06-01:** Tool calling implementation with update_diagram tool ✓ COMPLETE
+### Phase 5: Persistence & Semantic Memory (Current)
+- **05-01:** Session persistence foundation (Dexie, Zustand, auto-save) ✓ COMPLETE
+- **05-02:** Memory storage and panel UI ✓ COMPLETE
+- **05-03:** Integration - sidebar, memory injection, chat commands ✓ COMPLETE
 
 ### Research Flags (for planning phases)
 - **Phase 2:** Prompt engineering for Mermaid generation needs iteration
@@ -127,10 +133,12 @@ Users can create accurate Mermaid diagrams by describing what they want in natur
 - [x] Plan Phase 4 (Switch from D2 to Mermaid)
 - [x] Execute 04-01-PLAN.md (Core rendering swap)
 - [x] Execute 04-02-PLAN.md (UI updates, backend removal, config cleanup)
-- [x] Plan Phase 6 (LLM Tool Calling for Diagram Updates)
-- [x] Execute 06-01-PLAN.md (Tool calling implementation)
-- [ ] Plan Phase 5 (Persistence & Semantic Memory)
-- [ ] Execute Phase 5
+- [x] Plan Phase 5 (Persistence & Semantic Memory)
+- [x] Execute 05-01-PLAN.md (Session persistence foundation)
+- [x] Execute 05-02-PLAN.md (Memory storage and panel)
+- [x] Execute 05-03-PLAN.md (Integration - sidebar, memory injection)
+- [ ] Plan Phase 6 (LLM Tool Calling for Diagram Updates)
+- [ ] Execute Phase 6
 
 ### Blockers
 - None - Mermaid provides client-side rendering without external dependencies
@@ -140,8 +148,8 @@ Users can create accurate Mermaid diagrams by describing what they want in natur
 ## Session Continuity
 
 **Last Updated:** 2026-02-15  
-**Phase Status:** Phase 6 complete (1 of 1 plans executed)  
-**Next Step:** Plan Phase 5 (Persistence & Semantic Memory) or move to Phase 5
+**Phase Status:** Phase 5 complete (3 of 3 plans executed)  
+**Next Step:** Plan Phase 6 (LLM Tool Calling for Diagram Updates) or execute remaining plans
 
 ---
 
