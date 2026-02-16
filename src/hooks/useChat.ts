@@ -151,6 +151,7 @@ export function useChat() {
   const [error, setError] = useState<string | null>(null);
   const [memoryEnabled, setMemoryEnabled] = useState<boolean>(true);
   const [memorySavingEnabled, setMemorySavingEnabled] = useState<boolean>(true);
+  const [selectedModel, setSelectedModel] = useState<string>(DEFAULT_MODEL);
 
   const [_streamingContent, setStreamingContent] = useState<string>('');
   const [_partialMermaid, setPartialMermaid] = useState<string>('');
@@ -263,7 +264,7 @@ export function useChat() {
       const tools = memorySavingEnabled
         ? [diagramTool, saveMemoryTool, deleteMemoryTool, updateMemoryTool]
         : [diagramTool];
-      const result = await streamChatWithTools(DEFAULT_MODEL, apiMessages, tools, callbacks, abortController.signal);
+      const result = await streamChatWithTools(selectedModel, apiMessages, tools, callbacks, abortController.signal);
       
       // Handle tool calls if the model used them
       if (result.toolCalls && result.toolCalls.length > 0) {
@@ -279,7 +280,7 @@ export function useChat() {
       abortControllerRef.current = null;
       setIsGenerating(false);
     }
-  }, [messages, toOllamaMessages, memorySavingEnabled]);
+  }, [messages, toOllamaMessages, memorySavingEnabled, selectedModel]);
 
   /**
    * Handle tool calls from the LLM
@@ -419,6 +420,8 @@ export function useChat() {
     setMemoryEnabled,
     memorySavingEnabled,
     setMemorySavingEnabled,
+    selectedModel,
+    setSelectedModel,
     streamingContent: _streamingContent,
     partialMermaid: _partialMermaid,
   };

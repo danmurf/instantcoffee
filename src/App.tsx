@@ -11,6 +11,7 @@ import { useSessions } from './hooks/useSessions';
 import { useSessionStore } from './stores/sessionStore';
 import { loadSession, deleteSession, renameSession } from './db/sessions';
 import type { SessionState } from './types/session';
+import { DEFAULT_MODEL } from './lib/ollama';
 
 initMermaid();
 
@@ -80,6 +81,7 @@ function App() {
     mermaidSource,
     history,
     historyIndex,
+    selectedModel: chat.selectedModel || DEFAULT_MODEL,
   };
 
   // Auto-save hook
@@ -215,6 +217,7 @@ function App() {
   // Load session state - restores app from saved session
   const loadSessionState = useCallback(async (state: SessionState) => {
     chat.setMessages(state.messages);
+    chat.setSelectedModel(state.selectedModel || DEFAULT_MODEL);
 
     if (state.mermaidSource) {
       setMermaidSource(state.mermaidSource);
@@ -310,6 +313,8 @@ function App() {
             onSendMessage={chat.sendMessage} 
             isGenerating={chat.isGenerating} 
             error={chat.error}
+            selectedModel={chat.selectedModel}
+            onModelChange={chat.setSelectedModel}
           />
         }
         rightPanel={

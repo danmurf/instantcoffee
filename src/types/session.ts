@@ -5,6 +5,7 @@ export interface SessionState {
   mermaidSource: string;
   history: string[];
   historyIndex: number;
+  selectedModel: string;
 }
 
 export interface Session {

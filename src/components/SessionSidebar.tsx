@@ -17,9 +17,6 @@ interface SessionSidebarProps {
   onMemorySavingEnabledChange: (enabled: boolean) => void;
 }
 
-/**
- * Format a timestamp to a relative time string
- */
 function formatRelativeTime(timestamp: number): string {
   const now = Date.now();
   const diff = now - timestamp;

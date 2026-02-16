@@ -2,12 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 import type { ChatMessage } from '../types/chat';
 import { LoadingAnimation } from './LoadingAnimation';
 import { MessageContent } from './MessageContent';
+import { fetchAvailableModels, DEFAULT_MODEL } from '../lib/ollama';
 
 interface ChatPanelProps {
   messages: ChatMessage[];
   isGenerating: boolean;
   error: string | null;
   onSendMessage: (content: string) => Promise<void>;
+  selectedModel: string;
+  onModelChange: (model: string) => void;
 }
 
 const EXAMPLE_PROMPTS = [
@@ -17,10 +20,24 @@ const EXAMPLE_PROMPTS = [
   "Draw a flowchart for order processing",
 ];
 
-export function ChatPanel({ messages, isGenerating, error, onSendMessage }: ChatPanelProps) {
+export function ChatPanel({ messages, isGenerating, error, onSendMessage, selectedModel, onModelChange }: ChatPanelProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [availableModels, setAvailableModels] = useState<string[]>([DEFAULT_MODEL]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+
+  useEffect(() => {
+    async function loadModels() {
+      setIsLoadingModels(true);
+      const models = await fetchAvailableModels();
+      if (models.length > 0) {
+        setAvailableModels(models);
+      }
+      setIsLoadingModels(false);
+    }
+    loadModels();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -137,6 +154,35 @@ export function ChatPanel({ messages, isGenerating, error, onSendMessage }: Chat
       </div>
 
       <div className="border-t border-gray-200 p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <label className="text-xs text-gray-500">Model:</label>
+          <select
+            value={selectedModel}
+            onChange={(e) => onModelChange(e.target.value)}
+            disabled={isLoadingModels}
+            className="flex-1 max-w-[200px] text-xs bg-gray-50 border border-gray-300 rounded px-2 py-1 text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            {availableModels.map((model) => (
+              <option key={model} value={model}>
+                {model}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={async () => {
+              const models = await fetchAvailableModels();
+              if (models.length > 0) {
+                setAvailableModels(models);
+              }
+            }}
+            className="p-1 text-gray-400 hover:text-gray-600"
+            title="Refresh models"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
         <form onSubmit={handleSubmit} className="flex items-start gap-2">
           <div className="flex-1">
             <textarea

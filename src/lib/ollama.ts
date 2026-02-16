@@ -12,6 +12,29 @@ export const DEFAULT_MODEL = 'gpt-oss:20b';
 export const HEALTH_TIMEOUT = 5000;
 
 /**
+ * Fetch list of available models from Ollama
+ * @returns Promise<string[]> - Array of model names
+ */
+export async function fetchAvailableModels(): Promise<string[]> {
+  try {
+    const response = await fetch(`${OLLAMA_BASE}/api/tags`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    const models = data.models || [];
+    return models.map((m: { name: string }) => m.name);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Check if Ollama is running and accessible
  * @returns Promise<boolean> - true if Ollama is healthy, false otherwise
  */
