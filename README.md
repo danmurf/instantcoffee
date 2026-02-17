@@ -2,6 +2,8 @@
 
 An instant diagram generator using Mermaid and Ollama.
 
+![Instant Coffee Demo](screenshot.png)
+
 ## Overview
 
 Instant Coffee translates natural language descriptions into Mermaid diagrams using a local LLM. Describe what you want in plain English, and the application renders it as an SVG diagram.
